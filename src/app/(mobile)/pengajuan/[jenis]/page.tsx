@@ -1,0 +1,90 @@
+import { notFound } from "next/navigation";
+import { and, eq } from "drizzle-orm";
+
+import { getDb } from "@/db/client";
+import { leaveBalances, leaveTypes } from "@/db/schema";
+import { FormPengajuan, type JenisCutiOpsi } from "@/features/requests/form-pengajuan";
+import { bacaPengaturan } from "@/features/settings/service";
+import { wajibMasuk } from "@/lib/auth/session";
+import { tanggalWIB } from "@/lib/waktu";
+
+const JENIS = ["cuti", "izin", "lembur", "koreksi"] as const;
+type Jenis = (typeof JENIS)[number];
+
+export default async function HalamanFormPengajuan({
+  params,
+}: {
+  params: Promise<{ jenis: string }>;
+}) {
+  const pengguna = await wajibMasuk();
+  const { jenis } = await params;
+
+  if (!JENIS.includes(jenis as Jenis)) notFound();
+
+  const db = await getDb();
+  const tahun = Number(tanggalWIB().slice(0, 4));
+
+  // Saldo dihitung di server; formulir hanya menampilkannya.
+  const baris = await db
+    .select({
+      id: leaveTypes.id,
+      nama: leaveTypes.nama,
+      butuhLampiran: leaveTypes.butuhLampiran,
+      kuotaDefault: leaveTypes.kuotaDefault,
+      kuota: leaveBalances.kuota,
+      carryOverMasuk: leaveBalances.carryOverMasuk,
+      terpakai: leaveBalances.terpakai,
+      pending: leaveBalances.pending,
+    })
+    .from(leaveTypes)
+    .leftJoin(
+      leaveBalances,
+      and(
+        eq(leaveBalances.leaveTypeId, leaveTypes.id),
+        eq(leaveBalances.employeeId, pengguna.employeeId),
+        eq(leaveBalances.tahun, tahun),
+      ),
+    )
+    .where(eq(leaveTypes.aktif, true));
+
+  // Tab "cuti" menampilkan cuti biasa, tab "izin" yang butuh lampiran.
+  const semua: JenisCutiOpsi[] = baris.map((b) => ({
+    id: b.id,
+    nama: b.nama,
+    butuhLampiran: b.butuhLampiran,
+    kuotaDefault: b.kuotaDefault,
+    sisa: Math.max(
+      0,
+      (b.kuota ?? b.kuotaDefault) +
+        (b.carryOverMasuk ?? 0) -
+        (b.terpakai ?? 0) -
+        (b.pending ?? 0),
+    ),
+  }));
+
+  const jenisCuti =
+    jenis === "izin"
+      ? semua.filter((s) => s.butuhLampiran || s.kuotaDefault === 0)
+      : semua.filter((s) => !s.butuhLampiran && s.kuotaDefault > 0);
+
+  const kebijakan = await bacaPengaturan("kebijakan_absensi");
+
+  return (
+    <div className="pb-6">
+      <header className="bg-surface border-app pt-safe border-b px-5 pb-8">
+        <h1 className="text-body pt-4 text-[19px] font-extrabold">Pengajuan Baru</h1>
+        <p className="text-subtle mt-0.5 text-xs">
+          Akan diteruskan ke penyetuju yang ditunjuk admin
+        </p>
+      </header>
+
+      <div className="pt-5">
+        <FormPengajuan
+          jenis={jenis as Jenis}
+          jenisCuti={jenisCuti.length > 0 ? jenisCuti : semua}
+          batasBackdateHari={kebijakan.batasBackdateHari}
+        />
+      </div>
+    </div>
+  );
+}

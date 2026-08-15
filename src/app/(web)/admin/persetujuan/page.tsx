@@ -1,0 +1,146 @@
+import Link from "next/link";
+
+import { Card, CardBody } from "@/components/ui/card";
+import type { RequestStatus } from "@/db/schema";
+import { ringkasanAntrean } from "@/features/approval/actions";
+import {
+  daftarPengajuan,
+  hitungPerStatus,
+  petaJenisCuti,
+  saringYangBolehDiputuskan,
+} from "@/features/approval/service";
+import {
+  TabelPersetujuan,
+  type BarisTampil,
+} from "@/features/approval/tabel-persetujuan";
+import { PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
+import { cn } from "@/lib/utils";
+import { tanggalWIB } from "@/lib/waktu";
+
+export const metadata = { title: "Antrean Persetujuan" };
+
+const TAB: { nilai: RequestStatus | "SEMUA"; label: string }[] = [
+  { nilai: "PENDING", label: "Menunggu" },
+  { nilai: "APPROVED", label: "Disetujui" },
+  { nilai: "REJECTED", label: "Ditolak" },
+  { nilai: "SEMUA", label: "Semua" },
+];
+
+export default async function HalamanPersetujuan({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
+  const pengguna = await wajibPeran(...PERAN_PENYETUJU);
+  const sp = await searchParams;
+
+  const status = (TAB.find((t) => t.nilai === sp.status)?.nilai ?? "PENDING") as
+    RequestStatus | "SEMUA";
+
+  const [daftar, hitung, ringkas, jenisCuti] = await Promise.all([
+    daftarPengajuan(status),
+    hitungPerStatus(),
+    ringkasanAntrean(),
+    petaJenisCuti(),
+  ]);
+
+  // Wewenang dihitung di server untuk setiap baris, lalu dipakai lagi
+  // sebagai penjaga di dalam server action — bukan hanya untuk UI.
+  const wewenang = await saringYangBolehDiputuskan(pengguna, daftar);
+
+  const baris: BarisTampil[] = daftar.map((d) => ({
+    id: d.id,
+    tipe: d.tipe,
+    status: d.status,
+    alasan: d.alasan,
+    payload: d.payload,
+    createdAt: tanggalWIB(d.createdAt),
+    currentStep: d.currentStep,
+    totalStep: d.totalStep,
+    nama: d.nama,
+    jabatan: d.jabatan,
+    departemen: d.departemen,
+  }));
+
+  const bisaDiputuskan = Object.values(wewenang).filter(Boolean).length;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-body text-2xl font-extrabold tracking-tight">
+          Antrean Persetujuan
+        </h1>
+        <p className="text-muted mt-1 text-sm">
+          Cuti, lembur, koreksi absen, dan absen di luar area dalam satu tempat.
+        </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        {[
+          {
+            label: "Menunggu keputusan",
+            nilai: ringkas.menunggu,
+            catatan: "Seluruh jenis pengajuan",
+            warna: "text-status-late",
+          },
+          {
+            label: "Masuk hari ini",
+            nilai: ringkas.hariIni,
+            catatan: "Diajukan pada tanggal ini",
+            warna: "text-body",
+          },
+          {
+            label: "Wewenang Anda",
+            nilai: bisaDiputuskan,
+            catatan: "Bisa Anda putuskan sekarang",
+            warna: "text-status-ontime",
+          },
+        ].map((k) => (
+          <Card key={k.label}>
+            <CardBody>
+              <p className="text-subtle text-xs font-bold tracking-wide uppercase">
+                {k.label}
+              </p>
+              <p
+                className={cn("tnum mt-2 text-3xl leading-none font-extrabold", k.warna)}
+              >
+                {k.nilai}
+              </p>
+              <p className="text-muted mt-2 text-xs">{k.catatan}</p>
+            </CardBody>
+          </Card>
+        ))}
+      </div>
+
+      {/* Penyaring status */}
+      <div className="border-app flex gap-1 overflow-x-auto border-b">
+        {TAB.map((t) => {
+          const aktif = t.nilai === status;
+          return (
+            <Link
+              key={t.nilai}
+              href={`/admin/persetujuan?status=${t.nilai}`}
+              className={cn(
+                "-mb-px border-b-2 px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors",
+                aktif
+                  ? "border-brand-600 text-brand-700 dark:text-brand-300"
+                  : "text-muted hover:text-body border-transparent",
+              )}
+            >
+              {t.label}
+              <span className="text-subtle tnum ml-1.5 text-xs">
+                {hitung[t.nilai] ?? 0}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+
+      <TabelPersetujuan
+        daftar={baris}
+        wewenang={wewenang}
+        namaJenisCuti={Object.fromEntries(jenisCuti)}
+      />
+    </div>
+  );
+}

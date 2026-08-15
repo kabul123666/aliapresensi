@@ -1,0 +1,69 @@
+import { eq } from "drizzle-orm";
+
+import { createDb, schema } from "../src/db/driver";
+import { hashPassword } from "../src/lib/auth/password";
+import { tanggalWIB } from "../src/lib/waktu";
+import { jelaskanGalat, pastikanDatabaseBebas } from "./penjaga-db";
+
+/**
+ * Membuat satu akun administrator dan berhenti di situ.
+ *
+ * Aplikasi sengaja dimulai kosong: tidak ada departemen, jabatan, lokasi,
+ * shift, maupun katalog tindakan bawaan. Semuanya diisi sendiri oleh admin
+ * lewat antarmuka, karena setiap rumah sakit punya struktur yang berbeda dan
+ * data contoh hanya akan menjadi sampah yang harus dibersihkan belakangan.
+ */
+
+const USERNAME = process.env.ADMIN_USERNAME ?? "admin";
+const PASSWORD = process.env.ADMIN_PASSWORD ?? "admin123";
+
+async function main() {
+  await pastikanDatabaseBebas();
+
+  const { db, jenis } = await createDb();
+  const { users, employees } = schema;
+
+  const [sudahAda] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.username, USERNAME))
+    .limit(1);
+
+  if (sudahAda) {
+    console.log(`• Akun "${USERNAME}" sudah ada. Tidak ada yang diubah.`);
+    console.log("  Jalankan `npm run db:reset` bila ingin mulai dari nol.");
+    process.exit(0);
+  }
+
+  const [akun] = await db
+    .insert(users)
+    .values({
+      username: USERNAME,
+      passwordHash: await hashPassword(PASSWORD),
+      role: "SUPER_ADMIN",
+      status: "ACTIVE",
+    })
+    .returning();
+
+  await db.insert(employees).values({
+    userId: akun.id,
+    nama: "Administrator",
+    tanggalMasuk: tanggalWIB(),
+    aktif: true,
+  });
+
+  console.log(`✓ Akun administrator dibuat di ${jenis}.\n`);
+  console.log(`  Username : ${USERNAME}`);
+  console.log(`  Password : ${PASSWORD}\n`);
+  console.log("  Ganti password setelah masuk pertama kali.");
+  console.log(
+    "  Selanjutnya isi Departemen, Jabatan, Lokasi, dan Shift dari menu admin.\n",
+  );
+
+  process.exit(0);
+}
+
+main().catch((err) => {
+  console.error("✗ Gagal membuat akun admin:\n" + jelaskanGalat(err));
+  process.exit(1);
+});

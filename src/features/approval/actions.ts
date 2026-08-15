@@ -1,0 +1,374 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
+import { and, eq, sql } from "drizzle-orm";
+import { z } from "zod";
+
+import { getDb } from "@/db/client";
+import {
+  attendances,
+  auditLogs,
+  employees,
+  leaveBalances,
+  notifications,
+  requestApprovals,
+  requests,
+  type RequestType,
+} from "@/db/schema";
+import { PERAN_PENYETUJU, wajibPeran, type PenggunaSesi } from "@/lib/auth/session";
+import { rentangTanggal, tanggalWIB, waktuWIB } from "@/lib/waktu";
+import { ambilPengajuan, bolehMemutuskan, LABEL_TIPE } from "./service";
+
+export type HasilKeputusan = { ok: boolean; pesan: string; jumlah?: number };
+
+const skema = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(50),
+  catatan: z.string().trim().max(500).optional(),
+});
+
+async function infoPermintaan() {
+  const h = await headers();
+  return {
+    userAgent: h.get("user-agent"),
+    ip: h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
+  };
+}
+
+type Pengajuan = Awaited<ReturnType<typeof ambilPengajuan>>[number];
+
+/* ==========================================================================
+ * Efek lanjutan
+ * ========================================================================== */
+
+/**
+ * Menerapkan akibat dari pengajuan yang disetujui.
+ *
+ * Dipisah per tipe supaya setiap akibat terlihat jelas dan bisa diuji
+ * sendiri-sendiri. Semua perubahan bertumpu pada payload yang dibuat sistem,
+ * bukan pada angka yang dikirim dari peramban penyetuju.
+ */
+async function terapkanPersetujuan(pengajuan: Pengajuan) {
+  const db = await getDb();
+  const p = pengajuan.payload as Record<string, unknown>;
+
+  switch (pengajuan.tipe) {
+    case "LEAVE":
+    case "PERMIT": {
+      const leaveTypeId = typeof p.leaveTypeId === "string" ? p.leaveTypeId : null;
+      const mulai = typeof p.mulai === "string" ? p.mulai : null;
+      const akhir = typeof p.akhir === "string" ? p.akhir : mulai;
+      const jumlahHari = Number(p.jumlahHari ?? 0);
+      if (!leaveTypeId || !mulai || !akhir) break;
+
+      const tahun = Number(mulai.slice(0, 4));
+
+      // Hari yang tadinya ditahan kini benar-benar terpakai.
+      await db
+        .update(leaveBalances)
+        .set({
+          terpakai: sql`${leaveBalances.terpakai} + ${jumlahHari}`,
+          pending: sql`greatest(0, ${leaveBalances.pending} - ${jumlahHari})`,
+        })
+        .where(
+          and(
+            eq(leaveBalances.employeeId, pengajuan.employeeId),
+            eq(leaveBalances.leaveTypeId, leaveTypeId),
+            eq(leaveBalances.tahun, tahun),
+          ),
+        );
+
+      // Tandai hari-hari tersebut sebagai cuti agar tidak terhitung alpa.
+      for (const tanggal of rentangTanggal(mulai, akhir)) {
+        await db
+          .insert(attendances)
+          .values({
+            employeeId: pengajuan.employeeId,
+            tanggal,
+            status: "ON_LEAVE",
+            catatanKerja: `Cuti/izin disetujui (${pengajuan.id.slice(0, 8)})`,
+          })
+          .onConflictDoUpdate({
+            target: [attendances.employeeId, attendances.tanggal],
+            set: { status: "ON_LEAVE", updatedAt: new Date() },
+          });
+      }
+      break;
+    }
+
+    case "BACKDATE": {
+      const attendanceId = typeof p.attendanceId === "string" ? p.attendanceId : null;
+      const tanggal = typeof p.tanggal === "string" ? p.tanggal : null;
+      const jamMasuk = typeof p.jamMasuk === "string" ? p.jamMasuk : null;
+      const jamPulang = typeof p.jamPulang === "string" ? p.jamPulang : null;
+      if (!tanggal) break;
+
+      const nilai = {
+        ...(jamMasuk ? { clockInAt: waktuWIB(tanggal, jamMasuk) } : {}),
+        ...(jamPulang ? { clockOutAt: waktuWIB(tanggal, jamPulang) } : {}),
+        hasilKoreksi: true,
+        updatedAt: new Date(),
+      };
+
+      if (attendanceId) {
+        await db.update(attendances).set(nilai).where(eq(attendances.id, attendanceId));
+      } else {
+        await db
+          .insert(attendances)
+          .values({
+            employeeId: pengajuan.employeeId,
+            tanggal,
+            status: "ON_TIME",
+            ...nilai,
+          })
+          .onConflictDoUpdate({
+            target: [attendances.employeeId, attendances.tanggal],
+            set: nilai,
+          });
+      }
+      break;
+    }
+
+    case "OUTSIDE_AREA": {
+      const attendanceId = typeof p.attendanceId === "string" ? p.attendanceId : null;
+      if (!attendanceId) break;
+      // Absennya sah: penanda anomali dicabut, tetapi jarak dan fotonya
+      // tetap tersimpan sebagai bukti.
+      await db
+        .update(attendances)
+        .set({
+          flags: sql`coalesce((select jsonb_agg(x) from jsonb_array_elements(${attendances.flags}) x where x::text not like '%DILUAR_AREA%'), '[]'::jsonb)`,
+          updatedAt: new Date(),
+        })
+        .where(eq(attendances.id, attendanceId));
+      break;
+    }
+
+    case "DEVICE_CHANGE": {
+      const sidik = typeof p.deviceFingerprint === "string" ? p.deviceFingerprint : null;
+      if (!sidik) break;
+      await db
+        .update(employees)
+        .set({ deviceFingerprint: sidik })
+        .where(eq(employees.id, pengajuan.employeeId));
+      break;
+    }
+
+    case "OVERTIME":
+      // Menit lembur sudah tercatat saat clock out; persetujuan hanya
+      // mengesahkannya untuk keperluan payroll.
+      break;
+  }
+}
+
+/** Menerapkan akibat dari pengajuan yang ditolak. */
+async function terapkanPenolakan(pengajuan: Pengajuan) {
+  const db = await getDb();
+  const p = pengajuan.payload as Record<string, unknown>;
+
+  switch (pengajuan.tipe) {
+    case "LEAVE":
+    case "PERMIT": {
+      const leaveTypeId = typeof p.leaveTypeId === "string" ? p.leaveTypeId : null;
+      const mulai = typeof p.mulai === "string" ? p.mulai : null;
+      const jumlahHari = Number(p.jumlahHari ?? 0);
+      if (!leaveTypeId || !mulai) break;
+
+      // Hari yang ditahan dikembalikan ke saldo.
+      await db
+        .update(leaveBalances)
+        .set({ pending: sql`greatest(0, ${leaveBalances.pending} - ${jumlahHari})` })
+        .where(
+          and(
+            eq(leaveBalances.employeeId, pengajuan.employeeId),
+            eq(leaveBalances.leaveTypeId, leaveTypeId),
+            eq(leaveBalances.tahun, Number(mulai.slice(0, 4))),
+          ),
+        );
+      break;
+    }
+
+    case "OUTSIDE_AREA": {
+      const attendanceId = typeof p.attendanceId === "string" ? p.attendanceId : null;
+      if (!attendanceId) break;
+      // Absen di luar area yang ditolak berarti hari itu dianggap alpa.
+      await db
+        .update(attendances)
+        .set({ status: "ABSENT", updatedAt: new Date() })
+        .where(eq(attendances.id, attendanceId));
+      break;
+    }
+
+    case "OVERTIME": {
+      const attendanceId = typeof p.attendanceId === "string" ? p.attendanceId : null;
+      if (!attendanceId) break;
+      // Lembur yang ditolak tidak boleh ikut terhitung di rekap.
+      await db
+        .update(attendances)
+        .set({ menitLembur: 0, updatedAt: new Date() })
+        .where(eq(attendances.id, attendanceId));
+      break;
+    }
+
+    default:
+      break;
+  }
+}
+
+/* ==========================================================================
+ * Aksi
+ * ========================================================================== */
+
+async function putuskan(
+  pengguna: PenggunaSesi,
+  ids: string[],
+  setuju: boolean,
+  catatan: string | undefined,
+): Promise<HasilKeputusan> {
+  const db = await getDb();
+  const daftar = await ambilPengajuan(ids);
+  const info = await infoPermintaan();
+
+  let berhasil = 0;
+  let ditolakWewenang = 0;
+
+  for (const pengajuan of daftar) {
+    if (pengajuan.status !== "PENDING") continue;
+
+    // Wewenang diperiksa ulang di server untuk setiap baris — tombol yang
+    // tersembunyi di antarmuka tidak pernah dijadikan pengaman.
+    const boleh = await bolehMemutuskan(pengguna, {
+      tipe: pengajuan.tipe as RequestType,
+      currentStep: pengajuan.currentStep,
+      departmentId: pengajuan.departmentId,
+      locationId: pengajuan.locationId,
+    });
+    if (!boleh) {
+      ditolakWewenang++;
+      continue;
+    }
+
+    await db.insert(requestApprovals).values({
+      requestId: pengajuan.id,
+      step: pengajuan.currentStep,
+      approverId: pengguna.userId,
+      keputusan: setuju ? "APPROVED" : "REJECTED",
+      catatan: catatan ?? null,
+      actedAt: new Date(),
+    });
+
+    const langkahTerakhir = pengajuan.currentStep >= pengajuan.totalStep;
+
+    if (!setuju) {
+      await db
+        .update(requests)
+        .set({ status: "REJECTED", selesaiAt: new Date() })
+        .where(eq(requests.id, pengajuan.id));
+      await terapkanPenolakan(pengajuan);
+    } else if (langkahTerakhir) {
+      await db
+        .update(requests)
+        .set({ status: "APPROVED", selesaiAt: new Date() })
+        .where(eq(requests.id, pengajuan.id));
+      await terapkanPersetujuan(pengajuan);
+    } else {
+      // Masih ada langkah berikutnya: pengajuan tetap menunggu.
+      await db
+        .update(requests)
+        .set({ currentStep: pengajuan.currentStep + 1 })
+        .where(eq(requests.id, pengajuan.id));
+    }
+
+    const label = LABEL_TIPE[pengajuan.tipe as RequestType];
+    await db.insert(notifications).values({
+      userId: pengajuan.userId,
+      tipe: "PENGAJUAN",
+      judul: setuju
+        ? langkahTerakhir
+          ? `${label} Anda disetujui`
+          : `${label} Anda lolos ke tahap berikutnya`
+        : `${label} Anda ditolak`,
+      isi: catatan ?? null,
+      link: "/pengajuan",
+    });
+
+    await db.insert(auditLogs).values({
+      actorId: pengguna.userId,
+      aksi: setuju ? "SETUJUI_PENGAJUAN" : "TOLAK_PENGAJUAN",
+      entitas: "requests",
+      entitasId: pengajuan.id,
+      before: { status: "PENDING", step: pengajuan.currentStep },
+      after: {
+        status: setuju ? (langkahTerakhir ? "APPROVED" : "PENDING") : "REJECTED",
+        catatan: catatan ?? null,
+      },
+      ip: info.ip,
+      userAgent: info.userAgent,
+    });
+
+    berhasil++;
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/persetujuan");
+  revalidatePath("/pengajuan");
+
+  if (berhasil === 0) {
+    return {
+      ok: false,
+      pesan:
+        ditolakWewenang > 0
+          ? "Anda tidak berwenang memutuskan pengajuan ini."
+          : "Tidak ada pengajuan yang bisa diproses.",
+    };
+  }
+
+  const tambahan =
+    ditolakWewenang > 0
+      ? ` ${ditolakWewenang} dilewati karena di luar wewenang Anda.`
+      : "";
+
+  return {
+    ok: true,
+    jumlah: berhasil,
+    pesan: `${berhasil} pengajuan ${setuju ? "disetujui" : "ditolak"}.${tambahan}`,
+  };
+}
+
+export async function aksiSetujui(
+  ids: string[],
+  catatan?: string,
+): Promise<HasilKeputusan> {
+  const pengguna = await wajibPeran(...PERAN_PENYETUJU);
+  const parsed = skema.safeParse({ ids, catatan });
+  if (!parsed.success) return { ok: false, pesan: "Data pengajuan tidak valid." };
+  return putuskan(pengguna, parsed.data.ids, true, parsed.data.catatan);
+}
+
+export async function aksiTolak(ids: string[], catatan: string): Promise<HasilKeputusan> {
+  const pengguna = await wajibPeran(...PERAN_PENYETUJU);
+  const parsed = skema.safeParse({ ids, catatan });
+  if (!parsed.success) return { ok: false, pesan: "Data pengajuan tidak valid." };
+
+  // Penolakan wajib beralasan supaya karyawan tahu apa yang harus diperbaiki.
+  if (!parsed.data.catatan || parsed.data.catatan.length < 5) {
+    return { ok: false, pesan: "Alasan penolakan wajib diisi, minimal 5 karakter." };
+  }
+  return putuskan(pengguna, parsed.data.ids, false, parsed.data.catatan);
+}
+
+/** Statistik ringkas untuk kepala halaman persetujuan. */
+export async function ringkasanAntrean() {
+  const db = await getDb();
+  const hariIni = tanggalWIB();
+  const [row] = await db
+    .select({
+      menunggu: sql<number>`count(*) filter (where ${requests.status} = 'PENDING')`,
+      hariIni: sql<number>`count(*) filter (where ${requests.status} = 'PENDING' and ${requests.createdAt}::date = ${hariIni}::date)`,
+    })
+    .from(requests);
+  return {
+    menunggu: Number(row?.menunggu ?? 0),
+    hariIni: Number(row?.hariIni ?? 0),
+  };
+}

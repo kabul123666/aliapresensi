@@ -1,26 +1,306 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Dark mode berbasis class agar bisa dikontrol pengguna, bukan hanya OS. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* ------------------------------------------------------------------
+   * Palet: kertas, tinta, dan hijau klinis.
+   *
+   * Diambil dari benda yang benar-benar ada di ruang HRD rumah sakit —
+   * lembar jadwal jaga: kertas abu-kehijauan, cetakan tinta pekat, dan satu
+   * warna institusi. Warna sinyal sengaja diredam ke arah tanah (oranye
+   * bakar, oxblood) supaya tabel absensi terbaca sebagai catatan resmi,
+   * bukan papan skor.
+   * ------------------------------------------------------------------ */
+  --color-brand-50: #edf3f0;
+  --color-brand-100: #d3e4dd;
+  --color-brand-200: #a8c9bd;
+  --color-brand-300: #74a895;
+  --color-brand-400: #47876f;
+  --color-brand-500: #256b52;
+  --color-brand-600: #0f5340;
+  --color-brand-700: #0b4433;
+  --color-brand-800: #0a3629;
+  --color-brand-900: #082b21;
+  --color-brand-950: #041713;
+
+  /* Netral kertas — sedikit hijau supaya senada dengan warna institusi */
+  --color-ink-50: #f7f8f6;
+  --color-ink-100: #eff1ee;
+  --color-ink-200: #e1e4df;
+  --color-ink-300: #c9cdc6;
+  --color-ink-400: #9aa098;
+  --color-ink-500: #6f766c;
+  --color-ink-600: #545b52;
+  --color-ink-700: #414740;
+  --color-ink-800: #2c312b;
+  --color-ink-900: #191d18;
+  --color-ink-950: #0d100c;
+
+  /* Warna status kehadiran — dipakai konsisten di seluruh aplikasi */
+  --color-status-ontime: #1e7a5a;
+  --color-status-late: #b4671c;
+  --color-status-absent: #9e2b3c;
+  --color-status-leave: #3b5ba5;
+  --color-status-overtime: #6b4e9e;
+  --color-status-holiday: #7a8177;
+
+  --color-warn-50: #fdf4e9;
+  --color-warn-100: #f7e4cb;
+  --color-warn-500: #b4671c;
+  --color-warn-600: #9a5615;
+  --color-warn-700: #7d4511;
+
+  --color-danger-50: #fbeef0;
+  --color-danger-100: #f5dade;
+  --color-danger-500: #9e2b3c;
+  --color-danger-600: #872333;
+  --color-danger-700: #6e1b29;
+
+  /* Radius kecil — bentuk formulir resmi, bukan gelembung aplikasi */
+  --radius-input: 0.375rem;
+  --radius-card: 0.5rem;
+  --radius-sheet: 0.75rem;
+
+  /* Bayangan nyaris tak ada — kedalaman dibawa garis, bukan blur */
+  --shadow-soft: 0 1px 1px rgb(13 16 12 / 0.03);
+  --shadow-raised: 0 1px 2px rgb(13 16 12 / 0.05), 0 2px 6px rgb(13 16 12 / 0.04);
+  --shadow-float: 0 8px 24px rgb(13 16 12 / 0.12), 0 2px 6px rgb(13 16 12 / 0.06);
+  --shadow-brand: none;
+
+  --font-sans: var(--font-plex), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, monospace;
+
+  --animate-pulse-ring: pulse-ring 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-rise: rise 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-pop: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.94);
+    opacity: 0.6;
+  }
+  70% {
+    transform: scale(1.22);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.22);
+    opacity: 0;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* --------------------------------------------------------------------
+ * Token semantik. Komponen selalu memakai token ini, tidak pernah warna
+ * mentah — sehingga mode gelap cukup diatur di satu tempat.
+ * -------------------------------------------------------------------- */
+:root {
+  --bg: #f2f4f1;
+  --bg-elevated: #ffffff;
+  --surface: #ffffff;
+  --surface-muted: #f7f8f6;
+  --border: #e2e5df;
+  --border-strong: #cbd0c7;
+  --text: #191d18;
+  --text-muted: #545b52;
+  --text-subtle: #7f867c;
+  --overlay: rgb(13 16 12 / 0.5);
+}
+
+.dark {
+  /* Palet gelap disetel ulang, bukan sekadar dibalik. Nuansa hijau tua
+     supaya tetap satu keluarga dengan warna merek. */
+  --bg: #0e120f;
+  --bg-elevated: #161b17;
+  --surface: #161b17;
+  --surface-muted: #1c221d;
+  --border: #262d26;
+  --border-strong: #364035;
+  --text: #e7eae5;
+  --text-muted: #9aa197;
+  --text-subtle: #757c73;
+  --overlay: rgb(4 6 4 / 0.66);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss02";
+    letter-spacing: -0.006em;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Semua nilai waktu, durasi, dan nominal diset mono.
+     Kolom jam jadi rata sempurna seperti kartu absen cetak, dan itulah
+     karakter tipografi utama aplikasi ini. */
+  .tnum {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  /* Label kecil di atas nilai — huruf kapital renggang, bukan judul tebal */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-subtle);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: var(--color-brand-200);
+    color: var(--color-brand-950);
+  }
+}
+
+@layer utilities {
+  .bg-app {
+    background-color: var(--bg);
+  }
+  .bg-surface {
+    background-color: var(--surface);
+  }
+  .bg-surface-muted {
+    background-color: var(--surface-muted);
+  }
+  .text-body {
+    color: var(--text);
+  }
+  .text-muted {
+    color: var(--text-muted);
+  }
+  .text-subtle {
+    color: var(--text-subtle);
+  }
+  .border-app {
+    border-color: var(--border);
+  }
+  .border-app-strong {
+    border-color: var(--border-strong);
+  }
+
+  /* Area aman untuk PWA di iPhone dengan notch */
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+  }
+  .pt-safe {
+    padding-top: max(env(safe-area-inset-top), 0.5rem);
+  }
+
+  .scrollbar-slim {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+}
+
+/* --------------------------------------------------------------------
+ * Cetak. Laporan dicetak dari halaman yang sedang dilihat, jadi kerangka
+ * aplikasi (sidebar, topbar, tombol) disembunyikan dan warnanya dipaksa
+ * terang supaya hemat tinta dan terbaca di kertas.
+ * -------------------------------------------------------------------- */
+@media print {
+  :root {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-muted: #ffffff;
+    --text: #000000;
+    --text-muted: #333333;
+    --text-subtle: #555555;
+    --border: #cccccc;
+    --border-strong: #999999;
+  }
+
+  aside,
+  header.sticky,
+  footer,
+  nav {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  /* Konten laporan memakai seluruh lebar kertas */
+  .lg\:pl-\[248px\] {
+    padding-left: 0 !important;
+  }
+
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  table {
+    font-size: 10.5px;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr,
+  li {
+    break-inside: avoid;
+  }
+
+  @page {
+    margin: 14mm;
+    size: A4 landscape;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
