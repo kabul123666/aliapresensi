@@ -121,7 +121,7 @@ export function SidebarAdmin({
         </span>
         <span className="min-w-0">
           <span className="text-body block truncate text-sm font-extrabold">
-            AliaPresensi
+            Presensi Karyawan
           </span>
           <span className="text-subtle block text-[11px]">Panel Admin</span>
         </span>

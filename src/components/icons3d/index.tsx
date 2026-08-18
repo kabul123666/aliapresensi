@@ -1,7 +1,7 @@
 import { useId } from "react";
 
 /**
- * Set ikon 3D AliaPresensi.
+ * Set ikon 3D aplikasi presensi.
  *
  * Dibuat sebagai SVG berlapis, bukan gambar raster, supaya tajam di layar
  * kepadatan berapa pun dan ukuran berkasnya kecil. Kesan tiga dimensi datang

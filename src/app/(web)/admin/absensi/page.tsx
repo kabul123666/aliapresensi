@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/card";
 import { TombolCetak } from "@/features/reports/tombol-cetak";
 import { opsiPenyaring, rekapPeriode, totalRekap } from "@/features/reports/service";
+import { bacaPengaturan } from "@/features/settings/service";
 import { lingkupData, PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
 import { cn, formatDurasi, formatRupiah } from "@/lib/utils";
 import { namaBulan, tanggalWIB } from "@/lib/waktu";
@@ -44,9 +45,10 @@ export default async function HalamanRekapAbsensi({
     );
   }
 
-  const [baris, opsi] = await Promise.all([
+  const [baris, opsi, profil] = await Promise.all([
     rekapPeriode({ tahun, bulan, departmentId }),
     opsiPenyaring(),
+    bacaPengaturan("profil_perusahaan"),
   ]);
   const total = totalRekap(baris);
 
@@ -93,7 +95,8 @@ export default async function HalamanRekapAbsensi({
       {/* Kop cetak — hanya tampil di kertas */}
       <div className="hidden print:block">
         <h1 className="text-center text-lg font-extrabold">
-          REKAP ABSENSI KARYAWAN — ALIA HOSPITAL
+          REKAP ABSENSI KARYAWAN
+          {profil.nama ? ` — ${profil.nama.toUpperCase()}` : ""}
         </h1>
         <p className="text-center text-sm">Periode {namaBulan(tahun, bulan)}</p>
       </div>

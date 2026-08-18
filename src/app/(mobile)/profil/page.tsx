@@ -137,7 +137,7 @@ export default async function HalamanProfil() {
         </form>
 
         <p className="text-subtle pt-2 text-center text-[11px]">
-          AliaPresensi v0.1 · Alia Hospital
+          Presensi Karyawan v0.1
         </p>
       </div>
     </div>

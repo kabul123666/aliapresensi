@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { rekapPeriode, totalRekap } from "@/features/reports/service";
+import { bacaPengaturan } from "@/features/settings/service";
 import { lingkupData, PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
 import { formatDurasi } from "@/lib/utils";
 import { namaBulan, tanggalWIB } from "@/lib/waktu";
@@ -38,12 +39,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ pesan: "Periode tidak valid" }, { status: 400 });
   }
 
+  const profil = await bacaPengaturan("profil_perusahaan");
   const baris = await rekapPeriode({ tahun, bulan, departmentId });
   const total = totalRekap(baris);
 
   const ExcelJS = await import("exceljs");
   const wb = new ExcelJS.Workbook();
-  wb.creator = "AliaPresensi";
+  wb.creator = profil.nama || "Presensi Karyawan";
   wb.created = new Date();
 
   const ws = wb.addWorksheet(`Rekap ${namaBulan(tahun, bulan)}`, {
@@ -52,7 +54,9 @@ export async function GET(request: Request) {
 
   // --- Kop laporan
   ws.mergeCells("A1:N1");
-  ws.getCell("A1").value = "REKAP ABSENSI KARYAWAN — ALIA HOSPITAL";
+  ws.getCell("A1").value = profil.nama
+    ? `REKAP ABSENSI KARYAWAN — ${profil.nama.toUpperCase()}`
+    : "REKAP ABSENSI KARYAWAN";
   ws.getCell("A1").font = { bold: true, size: 14 };
   ws.getCell("A1").alignment = { horizontal: "center" };
 
@@ -145,7 +149,7 @@ export async function GET(request: Request) {
 
   ws.addRow([]);
   const catatan = ws.addRow([
-    `Diunduh ${tanggalWIB()} dari AliaPresensi. Angka mengikuti data absensi pada saat pengunduhan.`,
+    `Diunduh ${tanggalWIB()}. Angka mengikuti data absensi pada saat pengunduhan.`,
   ]);
   catatan.font = { italic: true, size: 9, color: { argb: "FF6D7F7B" } };
 

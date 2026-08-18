@@ -131,7 +131,7 @@ export async function alamatDariKoordinat(
     const res = await fetch(url, {
       headers: {
         "User-Agent":
-          process.env.NOMINATIM_USER_AGENT ?? "AliaPresensi/1.0 (kontak@example.com)",
+          process.env.NOMINATIM_USER_AGENT ?? "PresensiKaryawan/1.0 (kontak@example.com)",
       },
       signal: AbortSignal.timeout(4000),
     });

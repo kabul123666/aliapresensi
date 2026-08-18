@@ -1,6 +1,6 @@
-# AliaPresensi — konteks untuk sesi Claude Code
+# Presensi Karyawan — konteks untuk sesi Claude Code
 
-Aplikasi absensi karyawan **Alia Hospital**. Baca `README.md` untuk cara
+Aplikasi presensi karyawan. Baca `README.md` untuk cara
 menjalankan dan `docs/PRD.md` untuk spesifikasi lengkap.
 
 ## Aturan kerja (disepakati dengan pemilik proyek)
@@ -48,12 +48,12 @@ diperlebar.
 
 ## Perintah
 
-| Perintah | Kegunaan |
-|---|---|
-| `npm run dev` | Server pengembangan |
-| `npm run db:setup` | Migrasi + buat akun admin (instalasi baru) |
-| `npm run db:reset` | Hapus database lokal, buat ulang akun admin |
-| `npm run typecheck` / `npm run lint` | Wajib bersih |
+| Perintah                             | Kegunaan                                    |
+| ------------------------------------ | ------------------------------------------- |
+| `npm run dev`                        | Server pengembangan                         |
+| `npm run db:setup`                   | Migrasi + buat akun admin (instalasi baru)  |
+| `npm run db:reset`                   | Hapus database lokal, buat ulang akun admin |
+| `npm run typecheck` / `npm run lint` | Wajib bersih                                |
 
 ## Jebakan yang sudah diketahui
 
@@ -71,11 +71,12 @@ diperlebar.
 
 Auth & RBAC · clock in/out berfoto + geofence + watermark server · catatan
 tindakan & fee · riwayat · notifikasi · pengajuan (cuti, izin, lembur, koreksi)
-+ pembatalan · ganti password · dashboard admin · rekap absensi + export Excel
-+ cetak · persetujuan · tindakan & fee + tarif khusus per jabatan · karyawan ·
-departemen & jabatan · jadwal jaga bulanan · shift · lokasi & geofence ·
-pengumuman · pengaturan (kebijakan, jenis cuti, aturan persetujuan, hari libur,
-tutup tahun cuti) · audit log.
+
+- pembatalan · ganti password · dashboard admin · rekap absensi + export Excel
+- cetak · persetujuan · tindakan & fee + tarif khusus per jabatan · karyawan ·
+  departemen & jabatan · jadwal jaga bulanan · shift · lokasi & geofence ·
+  pengumuman · pengaturan (kebijakan, jenis cuti, aturan persetujuan, hari libur,
+  tutup tahun cuti) · audit log.
 
 ## Yang belum dibangun
 

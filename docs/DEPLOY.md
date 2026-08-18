@@ -1,4 +1,4 @@
-# Memasang AliaPresensi ke internet (paket gratis)
+# Memasang aplikasi ke internet (paket gratis)
 
 **Vercel** menjalankan aplikasi, **Neon** menyimpan data, **Vercel Blob**
 menyimpan foto. Semuanya paket gratis, tanpa kartu kredit, dan seluruhnya

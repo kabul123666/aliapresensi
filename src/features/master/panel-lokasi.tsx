@@ -98,7 +98,7 @@ function FormLokasi({
           id="nama"
           name="nama"
           defaultValue={lokasi?.nama}
-          placeholder="Alia Hospital — Pusat"
+          placeholder="Klinik Pusat"
           required
         />
       </div>

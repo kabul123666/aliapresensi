@@ -13,9 +13,9 @@ import type { MetadataRoute } from "next";
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "AliaPresensi · Alia Hospital",
-    short_name: "AliaPresensi",
-    description: "Absensi karyawan Alia Hospital — clock in/out berfoto dengan geotag.",
+    name: "Presensi Karyawan",
+    short_name: "Presensi",
+    description: "Presensi karyawan — clock in/out berfoto dengan geotag.",
     lang: "id",
     dir: "ltr",
     start_url: "/",

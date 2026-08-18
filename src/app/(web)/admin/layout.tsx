@@ -32,7 +32,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         />
         <main className="mx-auto max-w-[1400px] px-5 py-6 lg:px-8">{children}</main>
         <footer className="text-subtle border-app mt-8 border-t px-5 py-5 text-xs lg:px-8">
-          AliaPresensi · Alia Hospital ·{" "}
+          Presensi Karyawan ·{" "}
           <Link href="/" className="hover:text-body font-semibold">
             Buka tampilan karyawan
           </Link>

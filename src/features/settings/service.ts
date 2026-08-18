@@ -62,7 +62,7 @@ const BAWAAN: {
   kebijakan_cuti: KebijakanCuti;
 } = {
   profil_perusahaan: {
-    nama: "Alia Hospital",
+    nama: "",
     alamat: "",
     telepon: "",
     email: "",

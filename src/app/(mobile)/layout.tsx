@@ -23,7 +23,7 @@ export default async function MobileLayout({ children }: { children: React.React
             <span className="text-sm font-extrabold text-white">A</span>
           </span>
           <span>
-            <span className="block text-sm font-bold text-white">AliaPresensi</span>
+            <span className="block text-sm font-bold text-white">Presensi Karyawan</span>
             <span className="text-brand-300/80 block text-[11px]">Tampilan karyawan</span>
           </span>
         </div>

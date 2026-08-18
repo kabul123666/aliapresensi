@@ -1,5 +1,5 @@
 /**
- * Skema database AliaPresensi.
+ * Skema database aplikasi presensi.
  *
  * Prinsip yang dipegang di sini (PRD §6.0 — Zero Hardcode):
  * seluruh angka kebijakan (toleransi, radius, kuota, tarif) tinggal di tabel,

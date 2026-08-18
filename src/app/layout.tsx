@@ -24,12 +24,12 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "AliaPresensi",
-    template: "%s · AliaPresensi",
+    default: "Presensi Karyawan",
+    template: "%s · Presensi Karyawan",
   },
-  description: "Sistem absensi karyawan Alia Hospital.",
-  applicationName: "AliaPresensi",
-  appleWebApp: { capable: true, title: "AliaPresensi", statusBarStyle: "default" },
+  description: "Sistem presensi karyawan — clock in/out berfoto dengan geotag.",
+  applicationName: "Presensi Karyawan",
+  appleWebApp: { capable: true, title: "Presensi Karyawan", statusBarStyle: "default" },
   robots: { index: false, follow: false },
 };
 
