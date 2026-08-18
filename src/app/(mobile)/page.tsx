@@ -2,10 +2,11 @@ import Link from "next/link";
 import { desc, eq, isNotNull } from "drizzle-orm";
 import { Bell, ChevronRight, Megaphone } from "lucide-react";
 
-import { IconCuti, IconFee, IconLaporan, IconLembur } from "@/components/icons3d";
 import { BadgeAbsen } from "@/components/ui/status";
 import { getDb } from "@/db/client";
 import { announcements, locations, procedureCatalog } from "@/db/schema";
+import { IconFee } from "@/components/icons3d";
+import { MenuAplikasi } from "@/components/mobile/menu-aplikasi";
 import { KartuAbsen } from "@/features/attendance/kartu-absen";
 import {
   absensiAktif,
@@ -14,7 +15,7 @@ import {
 } from "@/features/attendance/service";
 import { jumlahBelumDibaca } from "@/features/notifications/service";
 import { bacaPengaturan } from "@/features/settings/service";
-import { wajibMasuk } from "@/lib/auth/session";
+import { PERAN_PENYETUJU, wajibMasuk } from "@/lib/auth/session";
 import { formatDurasi, formatRupiah } from "@/lib/utils";
 import { jamWIB, namaBulan, tanggalPanjang, tanggalWIB } from "@/lib/waktu";
 
@@ -79,13 +80,6 @@ export default async function BerandaKaryawan() {
     absen?.tanggal === hariIni ? absen : absen?.clockOutAt ? null : absen;
   const sudahMasuk = Boolean(absenHariIni?.clockInAt);
   const sudahPulang = Boolean(absenHariIni?.clockOutAt);
-
-  const pintasan = [
-    { href: "/pengajuan/cuti", label: "Ajukan Cuti", Ikon: IconCuti },
-    { href: "/pengajuan/lembur", label: "Lembur", Ikon: IconLembur },
-    { href: "/fee", label: "Fee Saya", Ikon: IconFee },
-    { href: "/riwayat", label: "Rekap", Ikon: IconLaporan },
-  ];
 
   return (
     <div className="pb-6">
@@ -176,24 +170,7 @@ export default async function BerandaKaryawan() {
         </div>
       )}
 
-      {/* ------------------------------------------------------ Pintasan */}
-      <section className="mt-6 px-5">
-        <h2 className="text-body text-sm font-extrabold tracking-tight">Pintasan</h2>
-        <div className="mt-3 grid grid-cols-4 gap-2.5">
-          {pintasan.map(({ href, label, Ikon }) => (
-            <Link
-              key={href}
-              href={href}
-              className="bg-surface border-app hover:border-brand-300 flex flex-col items-center gap-2 rounded-[var(--radius-card)] border px-2 py-3.5 transition-colors"
-            >
-              <Ikon size={38} />
-              <span className="text-body text-center text-[11px] leading-tight font-semibold">
-                {label}
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
+      <MenuAplikasi penyetuju={PERAN_PENYETUJU.includes(pengguna.role)} />
 
       {/* ---------------------------------------------------- Ringkasan */}
       <section className="mt-6 px-5">
