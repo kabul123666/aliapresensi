@@ -3,10 +3,6 @@
 Aplikasi absensi karyawan **Alia Hospital** — clock in/out berfoto dengan geotag,
 pencatatan tindakan ber-fee, jadwal jaga, cuti & lembur, serta dashboard untuk HRD.
 
-> **Baru pertama kali membuka repo ini dan hanya ingin mencobanya?**
-> Ikuti [docs/PANDUAN-OWNER.md](docs/PANDUAN-OWNER.md) — panduan langkah demi
-> langkah tanpa istilah teknis, tanpa perlu hosting maupun domain.
-
 Spesifikasi lengkap ada di [docs/PRD.md](docs/PRD.md).
 
 ## Siapa yang memakai
@@ -50,8 +46,9 @@ diketik saat antre absen pagi. Karyawan yang lupa username atau password menghub
 admin; tidak ada pemulihan lewat email.
 
 Aplikasi sengaja dimulai **kosong**: tidak ada departemen, jabatan, lokasi, shift,
-maupun katalog tindakan bawaan. Urutan pengisiannya ada di
-[docs/PANDUAN-OWNER.md](docs/PANDUAN-OWNER.md).
+maupun katalog tindakan bawaan. Isi berurutan dari atas, karena yang bawah
+membutuhkan yang atas: departemen & jabatan → lokasi → shift → karyawan →
+katalog tindakan.
 
 Admin masuk ke `/admin`, karyawan masuk ke `/`.
 

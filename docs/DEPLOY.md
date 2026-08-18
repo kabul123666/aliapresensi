@@ -62,7 +62,7 @@ Setelah selesai, aplikasi siap dipakai di alamat `https://<nama-proyek>.vercel.a
 ## 4. Pemeriksaan
 
 1. Buka alamatnya, masuk dengan username `admin` dan password yang Anda isi tadi
-2. Isi data dasar sesuai urutan di [PANDUAN-OWNER.md](PANDUAN-OWNER.md):
+2. Isi data dasar berurutan, karena yang bawah membutuhkan yang atas:
    departemen → jabatan → lokasi → shift → karyawan → katalog tindakan
 3. Coba satu kali clock in dari HP untuk memastikan kamera, GPS, dan penyimpanan
    foto bekerja
