@@ -46,7 +46,6 @@ export function FormDaftar({ daftarJabatan }: { daftarJabatan: Jabatan[] }) {
   if (hasil?.ok) {
     return (
       <div>
-        <p className="eyebrow">Alia Hospital</p>
         <h1 className="text-body mt-3 text-xl font-semibold">Pendaftaran terkirim</h1>
         <p className="text-muted mt-3 text-sm leading-relaxed">{hasil.pesan}</p>
         <Link

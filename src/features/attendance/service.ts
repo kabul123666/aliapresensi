@@ -31,6 +31,13 @@ export type ShiftBerlaku = {
   /** Karyawan memang tidak dijadwalkan bekerja hari itu. */
   libur: boolean;
   alasanLibur: string | null;
+  /**
+   * Nama hari libur nasional bila tanggal itu libur, terlepas dari ada
+   * tidaknya shift. Dipakai untuk menandai absensi karyawan tanpa shift —
+   * mereka tetap boleh absen, tetapi rekapnya perlu menunjukkan bahwa hari
+   * itu hari libur.
+   */
+  liburNasional: string | null;
 };
 
 /**
@@ -57,8 +64,15 @@ export async function shiftBerlaku(
     )
     .limit(1);
 
+  const namaLiburNasional = liburNasional?.nama ?? null;
+
   if (roster?.libur) {
-    return { shift: null, libur: true, alasanLibur: "Libur terjadwal" };
+    return {
+      shift: null,
+      libur: true,
+      alasanLibur: "Libur terjadwal",
+      liburNasional: namaLiburNasional,
+    };
   }
 
   const shiftId =
@@ -71,21 +85,49 @@ export async function shiftBerlaku(
         .limit(1)
     )[0]?.shiftId;
 
-  if (!shiftId) return { shift: null, libur: false, alasanLibur: null };
+  // Tanpa shift, hari itu tidak pernah dianggap libur: karyawan yang jadwalnya
+  // belum ditetapkan justru yang paling sering datang di luar pola hari kerja.
+  // Penandaan hari liburnya tetap ikut, agar rekap admin tidak kehilangan
+  // konteks.
+  if (!shiftId) {
+    return {
+      shift: null,
+      libur: false,
+      alasanLibur: null,
+      liburNasional: namaLiburNasional,
+    };
+  }
 
   const [shift] = await db.select().from(shifts).where(eq(shifts.id, shiftId)).limit(1);
-  if (!shift) return { shift: null, libur: false, alasanLibur: null };
+  if (!shift) {
+    return {
+      shift: null,
+      libur: false,
+      alasanLibur: null,
+      liburNasional: namaLiburNasional,
+    };
+  }
 
   if (liburNasional) {
-    return { shift, libur: true, alasanLibur: liburNasional.nama };
+    return {
+      shift,
+      libur: true,
+      alasanLibur: liburNasional.nama,
+      liburNasional: namaLiburNasional,
+    };
   }
 
   const dow = hariPekanWIB(new Date(`${tanggal}T05:00:00Z`));
   if (!shift.hariKerja.includes(dow)) {
-    return { shift, libur: true, alasanLibur: "Bukan hari kerja shift ini" };
+    return {
+      shift,
+      libur: true,
+      alasanLibur: "Bukan hari kerja shift ini",
+      liburNasional: namaLiburNasional,
+    };
   }
 
-  return { shift, libur: false, alasanLibur: null };
+  return { shift, libur: false, alasanLibur: null, liburNasional: namaLiburNasional };
 }
 
 /** Hasil penilaian saat clock in. */
@@ -107,6 +149,28 @@ export function nilaiClockIn(shift: Shift, waktu: Date) {
     menitTerlambat: terlambat > 0 ? selisih : 0,
     terlaluDini: selisih < -shift.batasClockinDiniMenit,
     menitTerlaluDini: Math.max(0, -selisih - shift.batasClockinDiniMenit),
+  };
+}
+
+/**
+ * Penilaian clock out untuk karyawan yang hari itu tidak punya shift.
+ *
+ * Tanpa jam pulang tidak ada yang bisa disebut "pulang cepat" atau "lembur" —
+ * keduanya hanya bermakna relatif terhadap jadwal. Yang tersisa dan tetap
+ * benar adalah lama ia berada di tempat kerja, jadi itu saja yang dicatat.
+ * Istirahat pun tidak dipotong karena durasinya ditentukan per shift.
+ */
+export function nilaiClockOutTanpaShift(clockInAt: Date, waktu: Date) {
+  const durasiKerjaMenit = Math.max(
+    0,
+    Math.round((waktu.getTime() - clockInAt.getTime()) / 60000),
+  );
+
+  return {
+    status: "ON_TIME" as AttendanceStatus,
+    menitLembur: 0,
+    durasiKerjaMenit,
+    pulangCepat: false,
   };
 }
 

@@ -9,6 +9,12 @@ import { useSyncExternalStore } from "react";
  * luar React. Karena itu dibaca lewat useSyncExternalStore, bukan disalin ke
  * useState di dalam useEffect: nilainya selalu mengikuti sumber aslinya dan
  * tidak menimbulkan render berantai.
+ *
+ * Tema bawaan adalah terang. Aplikasi ini dipakai di ruang praktik yang
+ * terang benderang dan sebagian besar dibuka dari ponsel yang preferensi
+ * sistemnya kebetulan gelap — mengikuti OS membuat karyawan disambut layar
+ * hitam tanpa pernah memintanya. Yang mau gelap memilihnya sendiri di Profil,
+ * dan pilihan "Sistem" tetap tersedia sebagai pilihan sadar, bukan bawaan.
  */
 
 export type Tema = "terang" | "gelap" | "sistem";
@@ -19,8 +25,8 @@ const PERISTIWA = "alia-tema-berubah";
 function bacaTema(): Tema {
   const nilai = localStorage.getItem(KUNCI);
   if (nilai === "dark") return "gelap";
-  if (nilai === "light") return "terang";
-  return "sistem";
+  if (nilai === "system") return "sistem";
+  return "terang";
 }
 
 function langgananTema(beriTahu: () => void) {
@@ -38,7 +44,7 @@ function langgananTema(beriTahu: () => void) {
 
 /** Pilihan tema yang tersimpan: terang, gelap, atau ikut sistem. */
 export function useTema(): Tema {
-  return useSyncExternalStore(langgananTema, bacaTema, () => "sistem");
+  return useSyncExternalStore(langgananTema, bacaTema, () => "terang");
 }
 
 /** Apakah mode gelap sedang aktif setelah memperhitungkan preferensi sistem. */
@@ -57,8 +63,14 @@ export function useGelapAktif(): boolean {
 
 /** Menyimpan pilihan tema, menerapkannya ke <html>, lalu memberi tahu pembaca. */
 export function terapkanTema(tema: Tema) {
-  if (tema === "sistem") localStorage.removeItem(KUNCI);
-  else localStorage.setItem(KUNCI, tema === "gelap" ? "dark" : "light");
+  // Ketiganya disimpan eksplisit — termasuk "sistem". Tanpa nilai tersimpan
+  // artinya pengguna belum pernah memilih, dan itu berarti tema bawaan:
+  // terang. Menghapus kunci akan membuat "Sistem" tak bisa dibedakan dari
+  // "belum pernah memilih".
+  localStorage.setItem(
+    KUNCI,
+    tema === "gelap" ? "dark" : tema === "sistem" ? "system" : "light",
+  );
 
   const gelap =
     tema === "gelap" ||

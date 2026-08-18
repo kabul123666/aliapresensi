@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { FileText } from "lucide-react";
 
 import { IconFee } from "@/components/icons3d";
 import { Badge } from "@/components/ui/status";
@@ -99,6 +101,15 @@ export default async function HalamanFee() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="mt-4 px-5">
+        <Link
+          href={`/fee/slip?bulan=${tahun}-${String(bulan).padStart(2, "0")}`}
+          className="border-app-strong bg-surface text-body hover:bg-surface-muted flex h-11 items-center justify-center gap-2 rounded-[var(--radius-input)] border text-sm font-semibold transition-colors"
+        >
+          <FileText size={16} /> Lihat slip insentif
+        </Link>
       </div>
 
       <section className="mt-6 px-5">

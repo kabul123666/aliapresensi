@@ -130,6 +130,25 @@ export function PanelUmum({
           </span>
         </label>
 
+        <label className="border-app bg-surface-muted flex cursor-pointer items-start gap-3 rounded-[var(--radius-input)] border p-3.5">
+          <input
+            type="checkbox"
+            name="izinkanAbsenTanpaShift"
+            defaultChecked={absensi.izinkanAbsenTanpaShift}
+            className="accent-brand-600 mt-0.5 size-4"
+          />
+          <span>
+            <span className="text-body block text-sm font-bold">
+              Izinkan absen tanpa shift
+            </span>
+            <span className="text-muted mt-0.5 block text-[13px]">
+              Untuk staf yang hanya datang bila ada pasien. Kehadirannya tercatat penuh,
+              hanya saja tidak dinilai terlambat atau lembur karena tidak ada jam acuan.
+              Bila dimatikan, karyawan tanpa shift harus menunggu HRD menetapkan jadwal.
+            </span>
+          </span>
+        </label>
+
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <Label htmlFor="minKarakterCatatan">Minimal karakter catatan</Label>

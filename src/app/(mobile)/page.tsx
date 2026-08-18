@@ -13,6 +13,7 @@ import {
   shiftBerlaku,
 } from "@/features/attendance/service";
 import { jumlahBelumDibaca } from "@/features/notifications/service";
+import { bacaPengaturan } from "@/features/settings/service";
 import { wajibMasuk } from "@/lib/auth/session";
 import { formatDurasi, formatRupiah } from "@/lib/utils";
 import { jamWIB, namaBulan, tanggalPanjang, tanggalWIB } from "@/lib/waktu";
@@ -38,10 +39,11 @@ export default async function BerandaKaryawan() {
   const hariIni = tanggalWIB();
   const [tahun, bulan] = hariIni.split("-").map(Number);
 
-  const [absen, jadwal, ringkas] = await Promise.all([
+  const [absen, jadwal, ringkas, kebijakan] = await Promise.all([
     absensiAktif(pengguna.employeeId),
     shiftBerlaku(pengguna.employeeId, hariIni),
     ringkasanBulan(pengguna.employeeId, tahun, bulan),
+    bacaPengaturan("kebijakan_absensi"),
   ]);
 
   const [lokasi] = pengguna.locationId
@@ -158,6 +160,7 @@ export default async function BerandaKaryawan() {
                 }
               : null
           }
+          bolehTanpaShift={kebijakan.izinkanAbsenTanpaShift}
           isiFormTindakan={pengguna.isiFormTindakan}
           daftarTindakan={daftarTindakan}
         />

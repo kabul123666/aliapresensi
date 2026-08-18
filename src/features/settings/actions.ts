@@ -117,6 +117,7 @@ const skemaAbsensi = z.object({
   minKarakterCatatan: z.coerce.number().int().min(0).max(500),
   retensiFotoBulan: z.coerce.number().int().min(1).max(120),
   wajibCatatanKerja: z.coerce.boolean().optional(),
+  izinkanAbsenTanpaShift: z.coerce.boolean().optional(),
 });
 
 export async function aksiSimpanKebijakanAbsensi(
@@ -129,6 +130,8 @@ export async function aksiSimpanKebijakanAbsensi(
     ...mentah,
     wajibCatatanKerja:
       mentah.wajibCatatanKerja === "on" || mentah.wajibCatatanKerja === "true",
+    izinkanAbsenTanpaShift:
+      mentah.izinkanAbsenTanpaShift === "on" || mentah.izinkanAbsenTanpaShift === "true",
   });
   if (!parsed.success) return { ok: false, pesan: parsed.error.issues[0].message };
 
@@ -140,6 +143,7 @@ export async function aksiSimpanKebijakanAbsensi(
       minKarakterCatatan: parsed.data.minKarakterCatatan,
       retensiFotoBulan: parsed.data.retensiFotoBulan,
       wajibCatatanKerja: parsed.data.wajibCatatanKerja ?? false,
+      izinkanAbsenTanpaShift: parsed.data.izinkanAbsenTanpaShift ?? false,
     },
     "Aturan umum absensi",
   );

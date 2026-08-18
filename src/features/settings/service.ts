@@ -35,6 +35,13 @@ export type KebijakanAbsensi = {
   wajibCatatanKerja: boolean;
   minKarakterCatatan: number;
   retensiFotoBulan: number;
+  /**
+   * Mengizinkan clock in/out oleh karyawan yang tidak punya shift pada hari
+   * itu — baik karena shift default belum ditetapkan maupun karena tanggal
+   * tersebut kosong di roster. Sebagian staf memang hanya datang bila ada
+   * pasien, sehingga jadwalnya tidak bisa ditentukan di muka.
+   */
+  izinkanAbsenTanpaShift: boolean;
 };
 
 export type KebijakanCuti = {
@@ -65,6 +72,7 @@ const BAWAAN: {
     wajibCatatanKerja: true,
     minKarakterCatatan: 10,
     retensiFotoBulan: 24,
+    izinkanAbsenTanpaShift: true,
   },
   kebijakan_cuti: {
     tarifPencairanPerHari: 150_000,

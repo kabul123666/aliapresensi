@@ -33,6 +33,7 @@ const LABEL_FLAG: Record<string, string> = {
   DILUAR_AREA_PULANG: "Pulang di luar area",
   DEVICE_BARU: "Perangkat baru",
   HARI_LIBUR: "Absen di hari libur",
+  TANPA_SHIFT: "Tanpa shift terjadwal",
 };
 
 function KartuAngka({

@@ -180,6 +180,8 @@ async function TabRekap({ tahun, bulan }: { tahun: number; bulan: number }) {
     rekapPerJenis(tahun, bulan),
   ]);
 
+  const periode = `${tahun}-${String(bulan).padStart(2, "0")}`;
+
   return (
     <div className="grid gap-5 xl:grid-cols-2">
       <div className="bg-surface border-app overflow-hidden rounded-[var(--radius-card)] border">
@@ -197,7 +199,8 @@ async function TabRekap({ tahun, bulan }: { tahun: number; bulan: number }) {
                 <th className="px-5 py-2.5">Karyawan</th>
                 <th className="px-3 py-2.5 text-center">Tindakan</th>
                 <th className="px-3 py-2.5 text-right">Terverifikasi</th>
-                <th className="px-5 py-2.5 text-right">Total</th>
+                <th className="px-3 py-2.5 text-right">Total</th>
+                <th className="px-5 py-2.5 text-right">Slip</th>
               </tr>
             </thead>
             <tbody>
@@ -218,8 +221,16 @@ async function TabRekap({ tahun, bulan }: { tahun: number; bulan: number }) {
                   <td className="text-status-ontime tnum px-3 py-3 text-right font-semibold">
                     {formatRupiah(k.totalTerverifikasi)}
                   </td>
-                  <td className="text-body tnum px-5 py-3 text-right font-extrabold">
+                  <td className="text-body tnum px-3 py-3 text-right font-extrabold">
                     {formatRupiah(k.totalDiajukan)}
+                  </td>
+                  <td className="px-5 py-3 text-right">
+                    <Link
+                      href={`/admin/tindakan/slip/${k.employeeId}?bulan=${periode}`}
+                      className="text-brand-700 dark:text-brand-300 text-xs font-semibold underline underline-offset-2"
+                    >
+                      Lihat slip
+                    </Link>
                   </td>
                 </tr>
               ))}

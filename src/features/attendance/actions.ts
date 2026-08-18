@@ -21,7 +21,14 @@ import { MAKS_UKURAN_FOTO, olahFotoAbsensi, terlihatSepertiGambar } from "@/lib/
 import { alamatDariKoordinat, evaluasiGeofence } from "@/lib/geo";
 import { kunciFotoAbsensi, storage } from "@/lib/storage";
 import { tanggalWIB } from "@/lib/waktu";
-import { absensiAktif, nilaiClockIn, nilaiClockOut, shiftBerlaku } from "./service";
+import { bacaPengaturan } from "@/features/settings/service";
+import {
+  absensiAktif,
+  nilaiClockIn,
+  nilaiClockOut,
+  nilaiClockOutTanpaShift,
+  shiftBerlaku,
+} from "./service";
 
 export type HasilAbsen = { ok: boolean; pesan: string; kode?: string };
 
@@ -122,8 +129,12 @@ export async function aksiClockIn(
     return { ok: false, pesan: "Anda sudah absen masuk hari ini.", kode: "SUDAH_MASUK" };
   }
 
-  const { shift, libur, alasanLibur } = await shiftBerlaku(pengguna.employeeId, tanggal);
-  if (!shift) {
+  const { shift, libur, alasanLibur, liburNasional } = await shiftBerlaku(
+    pengguna.employeeId,
+    tanggal,
+  );
+  const { izinkanAbsenTanpaShift } = await bacaPengaturan("kebijakan_absensi");
+  if (!shift && !izinkanAbsenTanpaShift) {
     return {
       ok: false,
       pesan: "Shift Anda belum diatur. Hubungi HRD untuk penetapan jadwal kerja.",
@@ -154,8 +165,13 @@ export async function aksiClockIn(
     return { ok: false, pesan: geo.pesan, kode: "BUTUH_ALASAN" };
   }
 
-  const nilai = nilaiClockIn(shift, sekarang);
-  if (nilai.terlaluDini) {
+  // Tanpa shift tidak ada jam masuk untuk dibandingkan, jadi kehadiran dicatat
+  // apa adanya: hadir, tanpa hitungan terlambat dan tanpa batas absen dini.
+  const nilai = shift
+    ? nilaiClockIn(shift, sekarang)
+    : { status: "ON_TIME" as const, menitTerlambat: 0, terlaluDini: false };
+
+  if (shift && nilai.terlaluDini) {
     return {
       ok: false,
       pesan: `Absen masuk baru dibuka ${shift.batasClockinDiniMenit} menit sebelum jam ${shift.jamMasuk.slice(0, 5)}.`,
@@ -167,6 +183,12 @@ export async function aksiClockIn(
   if (posisi.mockLocation) flags.push("MOCK_GPS");
   if (geo.diLuarArea) flags.push("DILUAR_AREA");
   if (libur) flags.push("HARI_LIBUR");
+  if (!shift) {
+    flags.push("TANPA_SHIFT");
+    // Tanpa shift hari libur tidak memblokir absen, tetapi tetap ditandai
+    // supaya rekap admin tahu kehadiran itu jatuh di tanggal merah.
+    if (liburNasional && !flags.includes("HARI_LIBUR")) flags.push("HARI_LIBUR");
+  }
 
   const [karyawan] = await db
     .select({ deviceFingerprint: employees.deviceFingerprint })
@@ -207,7 +229,7 @@ export async function aksiClockIn(
     .values({
       employeeId: pengguna.employeeId,
       tanggal,
-      shiftId: shift.id,
+      shiftId: shift?.id ?? null,
       status: nilai.status,
       clockInAt: sekarang,
       clockInPhoto: kunci,
@@ -301,8 +323,9 @@ export async function aksiClockOut(
     return { ok: false, pesan: "Anda sudah absen pulang.", kode: "SUDAH_PULANG" };
   }
 
+  // Absen pulang tidak pernah diblokir karena shift: yang sudah terlanjur
+  // absen masuk harus selalu bisa menutup sesinya, apa pun keadaan jadwalnya.
   const { shift } = await shiftBerlaku(pengguna.employeeId, aktif.tanggal);
-  if (!shift) return { ok: false, pesan: "Shift tidak ditemukan. Hubungi HRD." };
 
   const lokasi = await muatLokasi(pengguna);
   if (!lokasi) return { ok: false, pesan: "Lokasi kerja belum diatur. Hubungi HRD." };
@@ -339,7 +362,9 @@ export async function aksiClockOut(
   }
 
   const sekarang = new Date();
-  const nilai = nilaiClockOut(shift, aktif.clockInAt, sekarang, aktif.status);
+  const nilai = shift
+    ? nilaiClockOut(shift, aktif.clockInAt, sekarang, aktif.status)
+    : nilaiClockOutTanpaShift(aktif.clockInAt, sekarang);
 
   const alamat = await alamatDariKoordinat(posisi.lat, posisi.lng);
   const fotoJadi = await olahFotoAbsensi(foto, {

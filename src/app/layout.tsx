@@ -38,17 +38,20 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f2f4f1" },
-    { media: "(prefers-color-scheme: dark)", color: "#0e120f" },
-  ],
+  // Warna bilah peramban mengikuti tema bawaan aplikasi (terang), bukan
+  // preferensi sistem — supaya bilah tidak gelap sementara halamannya putih.
+  themeColor: "#f2f4f1",
 };
 
 /**
- * Menerapkan tema sebelum paint agar tidak ada kedipan putih saat mode gelap.
+ * Menerapkan tema sebelum paint agar tidak ada kedipan saat mode gelap.
  * Harus inline dan berjalan lebih dulu dari React.
+ *
+ * Tanpa nilai tersimpan hasilnya terang — itu tema bawaan aplikasi. Preferensi
+ * gelap milik sistem operasi hanya diikuti bila pengguna memilih "Sistem"
+ * secara sadar di Profil (lihat src/lib/tema.ts).
  */
-const themeScript = `(function(){try{var t=localStorage.getItem("alia-theme");var d=t?t==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;if(d)document.documentElement.classList.add("dark")}catch(e){}})();`;
+const themeScript = `(function(){try{var t=localStorage.getItem("alia-theme");var d=t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(d)document.documentElement.classList.add("dark")}catch(e){}})();`;
 
 export default function RootLayout({
   children,
