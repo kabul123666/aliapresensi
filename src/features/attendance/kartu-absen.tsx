@@ -12,8 +12,6 @@ import { PanelAbsen, type Tindakan } from "./panel-absen";
 type Props = {
   sudahMasuk: boolean;
   sudahPulang: boolean;
-  jamMasukTercatat: string | null;
-  jamPulangTercatat: string | null;
   jadwal: { nama: string; jamMasuk: string; jamPulang: string } | null;
   /** Kebijakan admin: karyawan tanpa shift hari itu tetap boleh absen. */
   bolehTanpaShift: boolean;
@@ -25,8 +23,6 @@ type Props = {
 export function KartuAbsen({
   sudahMasuk,
   sudahPulang,
-  jamMasukTercatat,
-  jamPulangTercatat,
   jadwal,
   bolehTanpaShift,
   lokasi,
@@ -118,26 +114,6 @@ export function KartuAbsen({
                 </span>
               </button>
             )}
-          </div>
-
-          {/* Ringkasan jam hari ini */}
-          <div className="border-app relative mt-7 grid grid-cols-2 gap-3 border-t pt-5">
-            {[
-              { label: "Masuk", nilai: jamMasukTercatat, warna: "text-status-ontime" },
-              { label: "Pulang", nilai: jamPulangTercatat, warna: "text-status-late" },
-            ].map((k) => (
-              <div key={k.label} className="text-center">
-                <p className="text-subtle text-xs font-semibold">{k.label}</p>
-                <p
-                  className={cn(
-                    "tnum mt-1 text-xl font-extrabold",
-                    k.nilai ? k.warna : "text-subtle",
-                  )}
-                >
-                  {k.nilai ?? "--:--"}
-                </p>
-              </div>
-            ))}
           </div>
         </div>
       </div>
