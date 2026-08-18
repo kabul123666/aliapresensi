@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LayoutGrid } from "lucide-react";
 
 import {
   IconApproval,
@@ -23,6 +24,8 @@ type Menu = {
   href?: string;
   /** Hanya tampil bagi yang berwenang menyetujui. */
   penyetuju?: boolean;
+  /** Ikut tampil di beranda; sisanya hanya ada di halaman Lainnya. */
+  utama?: boolean;
 };
 
 /**
@@ -37,18 +40,23 @@ const KELOMPOK: { judul: string; menu: Menu[] }[] = [
   {
     judul: "Kehadiran",
     menu: [
-      { label: "Riwayat", href: "/riwayat", Ikon: IconRiwayat },
-      { label: "Jadwal Shift", href: "/jadwal", Ikon: IconLaporan },
-      { label: "Presensi Backdate", href: "/pengajuan/koreksi", Ikon: IconKamera },
+      { label: "Riwayat", href: "/riwayat", Ikon: IconRiwayat, utama: true },
+      { label: "Jadwal Shift", href: "/jadwal", Ikon: IconLaporan, utama: true },
+      {
+        label: "Presensi Backdate",
+        href: "/pengajuan/koreksi",
+        Ikon: IconKamera,
+        utama: true,
+      },
       { label: "Aktivitas Harian", Ikon: IconTindakan },
     ],
   },
   {
     judul: "Pengajuan",
     menu: [
-      { label: "Cuti", href: "/pengajuan/cuti", Ikon: IconCuti },
-      { label: "Izin", href: "/pengajuan/izin", Ikon: IconKaryawan },
-      { label: "Lembur", href: "/pengajuan/lembur", Ikon: IconLembur },
+      { label: "Cuti", href: "/pengajuan/cuti", Ikon: IconCuti, utama: true },
+      { label: "Izin", href: "/pengajuan/izin", Ikon: IconKaryawan, utama: true },
+      { label: "Lembur", href: "/pengajuan/lembur", Ikon: IconLembur, utama: true },
       { label: "Dinas", Ikon: IconLokasi },
       { label: "WFH", Ikon: IconKeamanan },
       {
@@ -62,7 +70,7 @@ const KELOMPOK: { judul: string; menu: Menu[] }[] = [
   {
     judul: "Finance",
     menu: [
-      { label: "Fee Saya", href: "/fee", Ikon: IconFee },
+      { label: "Fee Saya", href: "/fee", Ikon: IconFee, utama: true },
       { label: "Slip Insentif", href: "/fee/slip", Ikon: IconLaporan },
       { label: "Claim", Ikon: IconFee },
       { label: "Bonus", Ikon: IconFee },
@@ -123,6 +131,40 @@ function Petak({ m }: { m: Menu }) {
     <Link href={m.href} className={`${kelas} active:bg-surface-muted transition-colors`}>
       {isi}
     </Link>
+  );
+}
+
+/**
+ * Menu pilihan di beranda.
+ *
+ * Hanya yang paling sering dipakai yang tampil; selebihnya lewat "Lainnya".
+ * Beranda adalah layar yang dibuka sambil berjalan menuju tempat kerja, jadi
+ * yang dicari harus langsung terlihat tanpa memindai dua puluh ikon.
+ */
+export function MenuUtama() {
+  const utama = KELOMPOK.flatMap((k) => k.menu).filter((m) => m.utama);
+
+  return (
+    <section className="mt-6 px-5">
+      <h2 className="text-body text-sm font-extrabold tracking-tight">Menu</h2>
+      <div className="mt-2 grid grid-cols-4 gap-x-1 gap-y-3">
+        {utama.map((m) => (
+          <Petak key={m.label} m={m} />
+        ))}
+
+        <Link
+          href="/menu"
+          className="active:bg-surface-muted flex flex-col items-center gap-2 rounded-xl px-1 py-2.5 transition-colors"
+        >
+          <span className="bg-surface-muted grid size-11 place-items-center rounded-2xl">
+            <LayoutGrid className="text-muted" size={22} />
+          </span>
+          <span className="text-body text-center text-[11px] leading-tight font-semibold">
+            Lainnya
+          </span>
+        </Link>
+      </div>
+    </section>
   );
 }
 

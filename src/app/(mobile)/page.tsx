@@ -6,7 +6,7 @@ import { BadgeAbsen } from "@/components/ui/status";
 import { getDb } from "@/db/client";
 import { announcements, locations, procedureCatalog } from "@/db/schema";
 import { IconFee } from "@/components/icons3d";
-import { MenuAplikasi } from "@/components/mobile/menu-aplikasi";
+import { MenuUtama } from "@/components/mobile/menu-aplikasi";
 import { KartuAbsen } from "@/features/attendance/kartu-absen";
 import {
   absensiAktif,
@@ -15,7 +15,7 @@ import {
 } from "@/features/attendance/service";
 import { jumlahBelumDibaca } from "@/features/notifications/service";
 import { bacaPengaturan } from "@/features/settings/service";
-import { PERAN_PENYETUJU, wajibMasuk } from "@/lib/auth/session";
+import { wajibMasuk } from "@/lib/auth/session";
 import { formatDurasi, formatRupiah } from "@/lib/utils";
 import { jamWIB, namaBulan, tanggalPanjang, tanggalWIB } from "@/lib/waktu";
 
@@ -170,7 +170,7 @@ export default async function BerandaKaryawan() {
         </div>
       )}
 
-      <MenuAplikasi penyetuju={PERAN_PENYETUJU.includes(pengguna.role)} />
+      <MenuUtama />
 
       {/* ---------------------------------------------------- Ringkasan */}
       <section className="mt-6 px-5">
