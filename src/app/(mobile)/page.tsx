@@ -4,7 +4,7 @@ import { Bell, ChevronRight, Megaphone } from "lucide-react";
 
 import { BadgeAbsen } from "@/components/ui/status";
 import { getDb } from "@/db/client";
-import { announcements, locations, procedureCatalog } from "@/db/schema";
+import { announcements, employees, locations, procedureCatalog } from "@/db/schema";
 import { IconFee } from "@/components/icons3d";
 import { MenuUtama } from "@/components/mobile/menu-aplikasi";
 import { KartuAbsen } from "@/features/attendance/kartu-absen";
@@ -46,6 +46,12 @@ export default async function BerandaKaryawan() {
     ringkasanBulan(pengguna.employeeId, tahun, bulan),
     bacaPengaturan("kebijakan_absensi"),
   ]);
+
+  const [karyawan] = await db
+    .select({ menuBeranda: employees.menuBeranda })
+    .from(employees)
+    .where(eq(employees.id, pengguna.employeeId))
+    .limit(1);
 
   const [lokasi] = pengguna.locationId
     ? await db
@@ -170,7 +176,7 @@ export default async function BerandaKaryawan() {
         </div>
       )}
 
-      <MenuUtama />
+      <MenuUtama pilihan={karyawan?.menuBeranda} />
 
       {/* ---------------------------------------------------- Ringkasan */}
       <section className="mt-6 px-5">

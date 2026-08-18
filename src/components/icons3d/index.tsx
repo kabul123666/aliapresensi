@@ -576,3 +576,49 @@ export function IconKeamanan(props: Icon3DProps) {
     </Bingkai>
   );
 }
+
+/** Empat kubus — pintu ke seluruh menu aplikasi. */
+export function IconMenu(props: Icon3DProps) {
+  const uid = useId().replace(/:/g, "");
+  const p = PALET.slate;
+  const kubus = (x: number, y: number) => (
+    <>
+      <rect x={x} y={y + 3} width="22" height="22" rx="7" fill={p.sisi} />
+      <rect x={x} y={y} width="22" height="22" rx="7" fill={`url(#${uid}-muka)`} />
+      <rect
+        x={x + 4}
+        y={y + 4}
+        width="9"
+        height="4"
+        rx="2"
+        fill="#FFFFFF"
+        opacity="0.35"
+      />
+    </>
+  );
+  return (
+    <Bingkai {...props} uid={uid} palet={p}>
+      {kubus(8, 8)}
+      {kubus(34, 8)}
+      {kubus(8, 34)}
+      {kubus(34, 34)}
+    </Bingkai>
+  );
+}
+
+/** Rumah — beranda aplikasi karyawan. */
+export function IconBeranda(props: Icon3DProps) {
+  const uid = useId().replace(/:/g, "");
+  const p = PALET.teal;
+  return (
+    <Bingkai {...props} uid={uid} palet={p}>
+      <path d="M32 9 55 28v25a6 6 0 0 1-6 6H15a6 6 0 0 1-6-6V28z" fill={p.sisi} />
+      <path
+        d="M32 6 55 25v25a6 6 0 0 1-6 6H15a6 6 0 0 1-6-6V25z"
+        fill={`url(#${uid}-muka)`}
+      />
+      <rect x="25" y="36" width="14" height="20" rx="4" fill={`url(#${uid}-muka2)`} />
+      <path d="M32 6 55 25H9z" fill={p.terang} opacity="0.5" />
+    </Bingkai>
+  );
+}

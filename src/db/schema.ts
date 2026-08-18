@@ -233,6 +233,11 @@ export const employees = pgTable(
     /** Perangkat utama yang diikat ke akun ini (PRD §6.2, anti titip absen). */
     deviceFingerprint: varchar("device_fingerprint", { length: 128 }),
     /**
+     * Menu pilihan yang tampil di beranda, disimpan sebagai daftar kunci menu.
+     * Null berarti karyawan belum mengubahnya dan memakai susunan bawaan.
+     */
+    menuBeranda: jsonb("menu_beranda").$type<string[]>(),
+    /**
      * Apakah orang ini ikut pencatatan kehadiran. Akun administrator sistem
      * bukan karyawan yang absen, sehingga tidak boleh ikut terhitung sebagai
      * "belum absen" di dashboard maupun muncul di rekap dan jadwal jaga.

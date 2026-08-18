@@ -18,6 +18,8 @@ import {
 } from "@/components/icons3d";
 
 type Menu = {
+  /** Kunci tetap; label boleh berubah tanpa membatalkan pilihan karyawan. */
+  kunci: string;
   label: string;
   Ikon: (p: Icon3DProps) => React.ReactElement;
   /** Kosong berarti fiturnya belum dibangun — ditandai dan tidak bisa dibuka. */
@@ -40,26 +42,58 @@ const KELOMPOK: { judul: string; menu: Menu[] }[] = [
   {
     judul: "Kehadiran",
     menu: [
-      { label: "Riwayat", href: "/riwayat", Ikon: IconRiwayat, utama: true },
-      { label: "Jadwal Shift", href: "/jadwal", Ikon: IconLaporan, utama: true },
       {
+        kunci: "riwayat",
+        label: "Riwayat",
+        href: "/riwayat",
+        Ikon: IconRiwayat,
+        utama: true,
+      },
+      {
+        kunci: "jadwal-shift",
+        label: "Jadwal Shift",
+        href: "/jadwal",
+        Ikon: IconLaporan,
+        utama: true,
+      },
+      {
+        kunci: "presensi-backdate",
         label: "Presensi Backdate",
         href: "/pengajuan/koreksi",
         Ikon: IconKamera,
         utama: true,
       },
-      { label: "Aktivitas Harian", Ikon: IconTindakan },
+      { kunci: "aktivitas-harian", label: "Aktivitas Harian", Ikon: IconTindakan },
     ],
   },
   {
     judul: "Pengajuan",
     menu: [
-      { label: "Cuti", href: "/pengajuan/cuti", Ikon: IconCuti, utama: true },
-      { label: "Izin", href: "/pengajuan/izin", Ikon: IconKaryawan, utama: true },
-      { label: "Lembur", href: "/pengajuan/lembur", Ikon: IconLembur, utama: true },
-      { label: "Dinas", Ikon: IconLokasi },
-      { label: "WFH", Ikon: IconKeamanan },
       {
+        kunci: "cuti",
+        label: "Cuti",
+        href: "/pengajuan/cuti",
+        Ikon: IconCuti,
+        utama: true,
+      },
+      {
+        kunci: "izin",
+        label: "Izin",
+        href: "/pengajuan/izin",
+        Ikon: IconKaryawan,
+        utama: true,
+      },
+      {
+        kunci: "lembur",
+        label: "Lembur",
+        href: "/pengajuan/lembur",
+        Ikon: IconLembur,
+        utama: true,
+      },
+      { kunci: "dinas", label: "Dinas", Ikon: IconLokasi },
+      { kunci: "wfh", label: "WFH", Ikon: IconKeamanan },
+      {
+        kunci: "persetujuan",
         label: "Persetujuan",
         href: "/admin/persetujuan",
         Ikon: IconApproval,
@@ -70,20 +104,30 @@ const KELOMPOK: { judul: string; menu: Menu[] }[] = [
   {
     judul: "Finance",
     menu: [
-      { label: "Fee Saya", href: "/fee", Ikon: IconFee, utama: true },
-      { label: "Slip Insentif", href: "/fee/slip", Ikon: IconLaporan },
-      { label: "Claim", Ikon: IconFee },
-      { label: "Bonus", Ikon: IconFee },
-      { label: "Slip Gaji", Ikon: IconLaporan },
-      { label: "Perjalanan Dinas", Ikon: IconLokasi },
+      { kunci: "fee-saya", label: "Fee Saya", href: "/fee", Ikon: IconFee, utama: true },
+      {
+        kunci: "slip-insentif",
+        label: "Slip Insentif",
+        href: "/fee/slip",
+        Ikon: IconLaporan,
+      },
+      { kunci: "claim", label: "Claim", Ikon: IconFee },
+      { kunci: "bonus", label: "Bonus", Ikon: IconFee },
+      { kunci: "slip-gaji", label: "Slip Gaji", Ikon: IconLaporan },
+      { kunci: "perjalanan-dinas", label: "Perjalanan Dinas", Ikon: IconLokasi },
     ],
   },
   {
     judul: "Lainnya",
     menu: [
-      { label: "Notifikasi", href: "/notifikasi", Ikon: IconNotifikasi },
-      { label: "Profil", href: "/profil", Ikon: IconKaryawan },
-      { label: "Performance", Ikon: IconTindakan },
+      {
+        kunci: "notifikasi",
+        label: "Notifikasi",
+        href: "/notifikasi",
+        Ikon: IconNotifikasi,
+      },
+      { kunci: "profil", label: "Profil", href: "/profil", Ikon: IconKaryawan },
+      { kunci: "performance", label: "Performance", Ikon: IconTindakan },
     ],
   },
 ];
@@ -141,12 +185,32 @@ function Petak({ m }: { m: Menu }) {
  * Beranda adalah layar yang dibuka sambil berjalan menuju tempat kerja, jadi
  * yang dicari harus langsung terlihat tanpa memindai dua puluh ikon.
  */
-export function MenuUtama() {
-  const utama = KELOMPOK.flatMap((k) => k.menu).filter((m) => m.utama);
+export const SEMUA_MENU = KELOMPOK.flatMap((k) => k.menu);
+
+/** Susunan bawaan bagi karyawan yang belum pernah mengubah berandanya. */
+export const MENU_BAWAAN = SEMUA_MENU.filter((m) => m.utama).map((m) => m.kunci);
+
+export function MenuUtama({ pilihan }: { pilihan?: string[] | null }) {
+  const dipilih = pilihan?.length ? pilihan : MENU_BAWAAN;
+
+  // Kunci yang tidak dikenal diabaikan, sehingga menghapus sebuah menu dari
+  // aplikasi tidak membuat beranda siapa pun rusak.
+  const utama = dipilih
+    .map((k) => SEMUA_MENU.find((m) => m.kunci === k))
+    .filter((m): m is Menu => Boolean(m))
+    .slice(0, 7);
 
   return (
     <section className="mt-6 px-5">
-      <h2 className="text-body text-sm font-extrabold tracking-tight">Menu</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-body text-sm font-extrabold tracking-tight">Menu</h2>
+        <Link
+          href="/menu/atur"
+          className="text-brand-700 dark:text-brand-300 text-xs font-semibold"
+        >
+          Ubah
+        </Link>
+      </div>
       <div className="mt-2 grid grid-cols-4 gap-x-1 gap-y-3">
         {utama.map((m) => (
           <Petak key={m.label} m={m} />
