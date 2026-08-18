@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { daftarDepartemen, daftarLokasi } from "@/features/master/service";
 import { PanelCuti, type BarisJenisCuti } from "@/features/settings/panel-cuti";
 import { PanelLibur } from "@/features/settings/panel-libur";
@@ -21,7 +19,6 @@ import {
   statusTutupTahun,
 } from "@/features/settings/service";
 import { PERAN_ADMIN, wajibPeran } from "@/lib/auth/session";
-import { cn } from "@/lib/utils";
 import { tanggalPanjang, tanggalWIB } from "@/lib/waktu";
 
 export const metadata = { title: "Pengaturan" };
@@ -50,28 +47,13 @@ export default async function HalamanPengaturan({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-body text-2xl font-extrabold tracking-tight">Pengaturan</h1>
+        <h1 className="text-body text-2xl font-extrabold tracking-tight">
+          Pengaturan · {TAB.find((t) => t.nilai === tab)?.label}
+        </h1>
         <p className="text-muted mt-1 max-w-2xl text-sm">
           Seluruh kebijakan operasional diatur di sini — tidak ada angka yang ditanam di
           dalam kode. Setiap perubahan tercatat di audit log.
         </p>
-      </div>
-
-      <div className="border-app flex gap-1 overflow-x-auto border-b">
-        {TAB.map((t) => (
-          <Link
-            key={t.nilai}
-            href={`/admin/pengaturan?tab=${t.nilai}`}
-            className={cn(
-              "-mb-px border-b-2 px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors",
-              t.nilai === tab
-                ? "border-brand-600 text-brand-700 dark:text-brand-300"
-                : "text-muted hover:text-body border-transparent",
-            )}
-          >
-            {t.label}
-          </Link>
-        ))}
       </div>
 
       {tab === "umum" && <TabUmum />}

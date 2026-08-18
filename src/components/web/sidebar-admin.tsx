@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   Building2,
+  ChevronDown,
   CalendarRange,
   ClipboardCheck,
   LayoutDashboard,
@@ -42,7 +43,24 @@ const KELOMPOK = [
         Ikon: ClipboardCheck,
         badge: "persetujuan" as const,
       },
-      { href: "/admin/tindakan", label: "Tindakan & Fee", Ikon: Wallet },
+      {
+        href: "/admin/tindakan",
+        label: "Tindakan & Fee",
+        Ikon: Wallet,
+        anak: [
+          {
+            href: "/admin/tindakan?tab=verifikasi",
+            label: "Verifikasi",
+            tab: "verifikasi",
+          },
+          { href: "/admin/tindakan?tab=rekap", label: "Rekap Fee", tab: "rekap" },
+          {
+            href: "/admin/tindakan?tab=katalog",
+            label: "Katalog & Tarif",
+            tab: "katalog",
+          },
+        ],
+      },
       {
         href: "/admin/pengumuman",
         label: "Pengumuman",
@@ -104,7 +122,19 @@ export function SidebarAdmin({
   adminPenuh: boolean;
 }) {
   const pathname = usePathname();
+  const params = useSearchParams();
   const [terbuka, setTerbuka] = useState(false);
+  const [dibuka, setDibuka] = useState<string[]>([]);
+
+  const tabAktif = params.get("tab");
+
+  // Kelompok yang sedang dibuka isinya ikut terbuka sendiri, supaya pengguna
+  // tidak perlu mencari di mana halaman yang sedang ia lihat berada.
+  const grupTerbuka = (href: string) =>
+    dibuka.includes(href) || pathname.startsWith(href);
+
+  const alihkan = (href: string) =>
+    setDibuka((s) => (s.includes(href) ? s.filter((x) => x !== href) : [...s, href]));
 
   const kelompok = adminPenuh
     ? KELOMPOK
@@ -138,6 +168,60 @@ export function SidebarAdmin({
                 const exact = "exact" in sisa && sisa.exact;
                 const aktif = exact ? pathname === href : pathname.startsWith(href);
                 const jumlah = "badge" in sisa && sisa.badge ? badge[sisa.badge] : 0;
+                const anak = "anak" in sisa ? sisa.anak : undefined;
+
+                const kelas = cn(
+                  "flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13.5px] font-semibold transition-colors",
+                  aktif
+                    ? "bg-brand-50 text-brand-800 dark:bg-brand-900/40 dark:text-brand-200"
+                    : "text-muted hover:bg-surface-muted hover:text-body",
+                );
+
+                if (anak) {
+                  const buka = grupTerbuka(href);
+                  return (
+                    <li key={href}>
+                      <button
+                        type="button"
+                        onClick={() => alihkan(href)}
+                        aria-expanded={buka}
+                        className={kelas}
+                      >
+                        <Ikon size={17.5} strokeWidth={aktif ? 2.3 : 1.9} />
+                        <span className="flex-1 truncate">{label}</span>
+                        <ChevronDown
+                          size={15}
+                          className={cn("transition-transform", buka && "rotate-180")}
+                        />
+                      </button>
+
+                      {buka && (
+                        <ul className="border-app mt-0.5 ml-[1.4rem] space-y-0.5 border-l pl-3">
+                          {anak.map((a) => {
+                            const aAktif = aktif && (tabAktif ?? anak[0].tab) === a.tab;
+                            return (
+                              <li key={a.href}>
+                                <Link
+                                  href={a.href}
+                                  onClick={() => setTerbuka(false)}
+                                  aria-current={aAktif ? "page" : undefined}
+                                  className={cn(
+                                    "block truncate rounded-lg px-3 py-2 text-[13px] font-medium transition-colors",
+                                    aAktif
+                                      ? "text-brand-800 bg-brand-50 dark:bg-brand-900/40 dark:text-brand-200 font-semibold"
+                                      : "text-muted hover:bg-surface-muted hover:text-body",
+                                  )}
+                                >
+                                  {a.label}
+                                </Link>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </li>
+                  );
+                }
 
                 return (
                   <li key={href}>
@@ -145,12 +229,7 @@ export function SidebarAdmin({
                       href={href}
                       onClick={() => setTerbuka(false)}
                       aria-current={aktif ? "page" : undefined}
-                      className={cn(
-                        "flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13.5px] font-semibold transition-colors",
-                        aktif
-                          ? "bg-brand-50 text-brand-800 dark:bg-brand-900/40 dark:text-brand-200"
-                          : "text-muted hover:bg-surface-muted hover:text-body",
-                      )}
+                      className={kelas}
                     >
                       <Ikon size={17.5} strokeWidth={aktif ? 2.3 : 1.9} />
                       <span className="flex-1 truncate">{label}</span>

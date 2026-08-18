@@ -33,6 +33,17 @@ import {
 
 export type HasilAbsen = { ok: boolean; pesan: string; kode?: string };
 
+/*
+ * Absen di luar area tidak membuat pengajuan yang harus disetujui.
+ *
+ * Kehadiran adalah peristiwa yang sudah terjadi dan buktinya sudah lengkap —
+ * foto berstempel waktu server, koordinat, jarak, dan alasan yang diketik
+ * karyawan. Meminta persetujuan atasnya hanya menunda pekerjaan dua orang
+ * tanpa mengubah apa pun. Yang berjalan lewat persetujuan tetap hal yang
+ * memang perlu diputuskan sebelum berlaku: cuti, izin, lembur, dan koreksi
+ * absen. Penyimpangan lokasi tetap ditandai di rekap agar bisa ditinjau.
+ */
+
 const skemaPosisi = z.object({
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),
@@ -304,23 +315,6 @@ export async function aksiClockIn(
     })
     .returning();
 
-  // Absen di luar area otomatis menjadi pengajuan yang harus ditinjau admin.
-  if (geo.diLuarArea && lokasi.outsidePolicy === "REQUIRE_REASON") {
-    await db.insert(requests).values({
-      employeeId: pengguna.employeeId,
-      tipe: "OUTSIDE_AREA",
-      status: "PENDING",
-      alasan: posisi.alasan ?? null,
-      payload: {
-        attendanceId: baris.id,
-        tanggal,
-        jenis: "MASUK",
-        jarakM: geo.jarakM,
-        lokasi: lokasi.nama,
-      },
-    });
-  }
-
   const info = await infoPermintaan();
   await db.insert(auditLogs).values({
     actorId: pengguna.userId,
@@ -519,22 +513,6 @@ export async function aksiClockOut(
         attendanceId: aktif.id,
         tanggal: aktif.tanggal,
         menitLembur: nilai.menitLembur,
-      },
-    });
-  }
-
-  if (geo.diLuarArea && lokasi.outsidePolicy === "REQUIRE_REASON") {
-    await db.insert(requests).values({
-      employeeId: pengguna.employeeId,
-      tipe: "OUTSIDE_AREA",
-      status: "PENDING",
-      alasan: posisi.alasan ?? null,
-      payload: {
-        attendanceId: aktif.id,
-        tanggal: aktif.tanggal,
-        jenis: "PULANG",
-        jarakM: geo.jarakM,
-        lokasi: lokasi.nama,
       },
     });
   }

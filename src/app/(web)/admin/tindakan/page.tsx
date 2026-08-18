@@ -45,7 +45,6 @@ export default async function HalamanTindakan({
   const cocok = /^(\d{4})-(\d{2})$/.exec(sp.bulan ?? "");
   const tahun = cocok ? Number(cocok[1]) : Number(kini.slice(0, 4));
   const bulan = cocok ? Number(cocok[2]) : Number(kini.slice(5, 7));
-  const periode = `${tahun}-${String(bulan).padStart(2, "0")}`;
 
   const ringkas = await ringkasanTindakan(tahun, bulan);
 
@@ -60,7 +59,7 @@ export default async function HalamanTindakan({
     <div className="space-y-6">
       <div>
         <h1 className="text-body text-2xl font-extrabold tracking-tight">
-          Tindakan &amp; Fee
+          Tindakan &amp; Fee · {TAB.find((t) => t.nilai === tab)?.label}
         </h1>
         <p className="text-muted mt-1 max-w-2xl text-sm">
           Verifikasi tindakan yang dicatat karyawan saat clock out, lihat rekap fee, dan
@@ -107,23 +106,6 @@ export default async function HalamanTindakan({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="border-app flex gap-1 overflow-x-auto border-b">
-          {TAB.map((t) => (
-            <Link
-              key={t.nilai}
-              href={`/admin/tindakan?tab=${t.nilai}&bulan=${periode}`}
-              className={cn(
-                "-mb-px border-b-2 px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors",
-                t.nilai === tab
-                  ? "border-brand-600 text-brand-700 dark:text-brand-300"
-                  : "text-muted hover:text-body border-transparent",
-              )}
-            >
-              {t.label}
-            </Link>
-          ))}
-        </div>
-
         {tab !== "katalog" && (
           <div className="bg-surface border-app flex items-center rounded-[var(--radius-input)] border">
             <Link
