@@ -1,39 +1,27 @@
 # Memasang AliaPresensi ke internet (paket gratis)
 
-Susunan yang dipakai: **Vercel** menjalankan aplikasi, **Neon** menyimpan data,
-**Vercel Blob** menyimpan foto absensi. Semuanya paket gratis dan tanpa kartu
-kredit.
+**Vercel** menjalankan aplikasi, **Neon** menyimpan data, **Vercel Blob**
+menyimpan foto. Semuanya paket gratis, tanpa kartu kredit, dan seluruhnya
+dikerjakan dari browser — tidak perlu membuka Terminal sama sekali.
+
+Hanya ada **satu** hal yang perlu diketik: password administrator.
 
 ---
 
-## 1. Neon — database
-
-1. Masuk ke **https://neon.tech**
-2. **Create project** → nama `aliapresensi` → region **Singapore** (terdekat)
-3. Salin **Connection string**-nya, bentuknya seperti:
-   `postgresql://user:password@ep-xxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require`
-
-Simpan baik-baik — di dalamnya ada password database.
-
----
-
-## 2. Vercel — menjalankan aplikasi
+## 1. Buat proyek
 
 1. Masuk ke **https://vercel.com**
 2. **Add New → Project** → pilih repo **aliapresensi** → **Import**
-3. Buka **Environment Variables**, isi **satu baris ini saja**:
+3. Buka **Environment Variables**, isi satu baris:
 
 | Nama             | Isi                                 |
 | ---------------- | ----------------------------------- |
 | `ADMIN_PASSWORD` | password administrator pilihan Anda |
 
-Sisanya tidak perlu diisi tangan: `DATABASE_URL` dan `BLOB_READ_WRITE_TOKEN`
-diisi otomatis saat database dan penyimpanan ditautkan, zona waktu sudah
-tertanam di kode, dan jenis penyimpanan terdeteksi sendiri dari token Blob.
+4. Tekan **Deploy**, tunggu sampai selesai
 
-4. Tekan **Deploy**
-
-Hasilnya sebuah alamat seperti `https://aliapresensi.vercel.app`.
+Deploy pertama ini **sukses tetapi aplikasinya belum bisa dipakai** — databasenya
+memang belum ada. Itu normal, lanjutkan ke langkah berikutnya.
 
 > Kalau repo `aliapresensi` tidak muncul saat Import, klik **Adjust GitHub App
 > Permissions** lalu centang repo itu. Repo boleh berada di akun GitHub yang
@@ -41,50 +29,39 @@ Hasilnya sebuah alamat seperti `https://aliapresensi.vercel.app`.
 
 ---
 
-## 3. Vercel Blob — penyimpanan foto
+## 2. Pasang database dan penyimpanan foto
 
-Dilakukan setelah proyeknya ada.
+Di proyek yang sama, buka tab **Storage**:
 
-1. Di proyek yang sama, buka tab **Storage**
-2. **Create Database** → pilih **Blob** → beri nama → **Create**
-3. Pastikan store itu **Connect** ke proyek `aliapresensi`
+1. **Create Database** → **Neon** → region **Singapore** → **Create**
+2. **Create Database** → **Blob** → **Create**
 
-Vercel akan mengisi `BLOB_READ_WRITE_TOKEN` sendiri — tidak perlu diketik.
+Pastikan keduanya tersambung ke proyek `aliapresensi`. Vercel mengisi
+`DATABASE_URL` dan `BLOB_READ_WRITE_TOKEN` sendiri — tidak ada yang perlu
+disalin atau diketik.
 
-4. Buka tab **Deployments** → titik tiga pada deployment teratas → **Redeploy**,
-   supaya aplikasi membaca token yang baru masuk
-
-Foto disimpan sebagai objek **privat**, tanpa URL publik. Penyajiannya lewat
-`/api/berkas` yang memeriksa sesi, sehingga karyawan hanya bisa membuka fotonya
-sendiri dan admin bisa membuka semuanya.
+> Bila Neon tidak ada di daftar Storage, cari lewat **Marketplace**. Bila muncul
+> permintaan menyetujui syarat layanan Neon, itu harus Anda yang menyetujui.
 
 ---
 
-## 4. Siapkan isi database
+## 3. Redeploy
 
-Dijalankan **sekali saja**, dari komputer Anda, di dalam folder aplikasi.
+Tab **Deployments** → titik tiga pada deployment teratas → **Redeploy**.
 
-Membuat seluruh tabel di Neon:
+Redeploy inilah yang menyelesaikan segalanya secara otomatis:
 
-```bash
-DATABASE_URL="paste-connection-string-neon-di-sini" npm run db:migrate
-```
+- seluruh tabel database dibuat
+- akun administrator dibuat memakai `ADMIN_PASSWORD` yang Anda isi
+- foto absensi diarahkan ke Blob
 
-Membuat akun administrator — **ganti passwordnya**, jangan pakai contoh di bawah:
-
-```bash
-DATABASE_URL="paste-connection-string-neon-di-sini" ADMIN_USERNAME="admin" ADMIN_PASSWORD="ganti-dengan-password-kuat" npm run db:admin
-```
-
-> Password admin wajib berbeda dari `admin123`. Password bawaan itu tertulis
-> terbuka di README repo publik — kalau dipakai, siapa pun yang menemukan alamat
-> aplikasi bisa masuk sebagai administrator.
+Setelah selesai, aplikasi siap dipakai di alamat `https://<nama-proyek>.vercel.app`.
 
 ---
 
-## 5. Pemeriksaan setelah online
+## 4. Pemeriksaan
 
-1. Buka alamat Vercel-nya, masuk memakai akun admin yang barusan dibuat
+1. Buka alamatnya, masuk dengan username `admin` dan password yang Anda isi tadi
 2. Isi data dasar sesuai urutan di [PANDUAN-OWNER.md](PANDUAN-OWNER.md):
    departemen → jabatan → lokasi → shift → karyawan → katalog tindakan
 3. Coba satu kali clock in dari HP untuk memastikan kamera, GPS, dan penyimpanan
@@ -92,6 +69,20 @@ DATABASE_URL="paste-connection-string-neon-di-sini" ADMIN_USERNAME="admin" ADMIN
 
 Kamera dan GPS hanya diizinkan browser pada alamat HTTPS. Alamat Vercel sudah
 HTTPS, jadi absen dari HP karyawan akan berfungsi.
+
+---
+
+## Kalau ada yang gagal
+
+| Gejala                                  | Sebabnya                                                                                        |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Halaman menampilkan "Application error" | Database belum tertaut. Ulangi langkah 2, lalu Redeploy.                                        |
+| Bisa masuk, tetapi foto absensi gagal   | Store Blob belum tertaut atau belum Redeploy setelah menautkannya.                              |
+| Username `admin` ditolak                | `ADMIN_PASSWORD` belum terisi saat Redeploy. Isi di Settings → Environment Variables, Redeploy. |
+| Build gagal                             | Buka deployment yang merah → tab **Building** → baca baris paling bawah yang berwarna merah.    |
+
+Log setiap tahap penyiapan bisa dibaca di tab **Building** pada deployment —
+termasuk keterangan bila migrasi atau pembuatan admin sengaja dilewati.
 
 ---
 
@@ -104,22 +95,20 @@ HTTPS, jadi absen dari HP karyawan akan berfungsi.
 | Vercel Hobby | 100 GB lalu-lintas | cukup                        |
 
 Foto disimpan 720×960 kualitas 72, sekitar 75 KB per lembar; dua lembar per
-karyawan per hari.
-
-Angka jatah gratis di atas berlaku saat dokumen ini ditulis dan bisa berubah —
-periksa di situs masing-masing.
+karyawan per hari. Angka jatah gratis berlaku saat dokumen ini ditulis dan bisa
+berubah — periksa di situs masing-masing.
 
 ### Yang perlu diantisipasi
 
 **Blob penuh sekitar tahun kedua.** Saat mendekati 1 GB, pilihannya menaikkan
 paket Blob atau pindah ke Cloudflare R2 (gratis 10 GB, tahan belasan tahun).
-Pindah ke R2 hanya mengganti `STORAGE_DRIVER` menjadi `r2` beserta kredensialnya
-— kodenya sudah mendukung — tetapi foto lama perlu disalin manual.
+Pindah ke R2 cukup mengisi `STORAGE_DRIVER=r2` beserta kredensialnya — kodenya
+sudah mendukung — tetapi foto lama perlu disalin manual.
 
 **Retensi foto belum berjalan.** Di Pengaturan ada "Retensi foto absensi
 (bulan)", tetapi belum ada penjadwal yang benar-benar menghapus foto lama,
 sehingga penyimpanan tumbuh terus. Bila penghapusan otomatis itu dijalankan,
-konsumsi berhenti tumbuh di sekitar 1,5 GB dan tidak pernah bertambah lagi.
+konsumsi berhenti tumbuh di sekitar 1,5 GB.
 
 **Vercel Hobby melarang penggunaan komersial.** Untuk dipakai operasional
 sungguhan, paketnya perlu dinaikkan ke Pro (sekitar $20/bulan). Menaikkan paket
