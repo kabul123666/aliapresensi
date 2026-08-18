@@ -148,10 +148,9 @@ export function PanelAbsen({
         audio: false,
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
+      // Pemasangan stream ke elemen dikerjakan effect di bawah. Elemen <video>
+      // baru ada setelah tahap berpindah, jadi menyetelnya di sini selalu
+      // mengenai ref yang masih kosong dan pratinjaunya berakhir hitam.
       setTahap("kamera");
     } catch {
       setGalatKamera(
@@ -159,6 +158,22 @@ export function PanelAbsen({
       );
     }
   }, []);
+
+  /**
+   * Menyambungkan stream ke elemen video begitu elemennya benar-benar ada.
+   *
+   * play() bisa ditolak peramban bila dipanggil di luar gestur pengguna;
+   * penolakan itu diabaikan karena elemennya sudah bersumber dan atribut
+   * autoPlay akan menjalankannya sendiri.
+   */
+  useEffect(() => {
+    const video = videoRef.current;
+    const stream = streamRef.current;
+    if (tahap !== "kamera" || !video || !stream) return;
+
+    video.srcObject = stream;
+    void video.play().catch(() => {});
+  }, [tahap]);
 
   const matikanKamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -397,6 +412,7 @@ export function PanelAbsen({
                   <div className="relative overflow-hidden rounded-[var(--radius-card)] bg-black">
                     <video
                       ref={videoRef}
+                      autoPlay
                       playsInline
                       muted
                       className="aspect-[3/4] w-full scale-x-[-1] object-cover"
