@@ -11,7 +11,7 @@ Hanya ada **satu** hal yang perlu diketik: password administrator.
 ## 1. Buat proyek
 
 1. Masuk ke **https://vercel.com**
-2. **Add New → Project** → pilih repo **aliapresensi** → **Import**
+2. **Add New → Project** → pilih repo **presensikaryawan** → **Import**
 3. Buka **Environment Variables**, isi satu baris:
 
 | Nama             | Isi                                 |
@@ -23,7 +23,7 @@ Hanya ada **satu** hal yang perlu diketik: password administrator.
 Deploy pertama ini **sukses tetapi aplikasinya belum bisa dipakai** — databasenya
 memang belum ada. Itu normal, lanjutkan ke langkah berikutnya.
 
-> Kalau repo `aliapresensi` tidak muncul saat Import, klik **Adjust GitHub App
+> Kalau repo `presensikaryawan` tidak muncul saat Import, klik **Adjust GitHub App
 > Permissions** lalu centang repo itu. Repo boleh berada di akun GitHub yang
 > berbeda dari akun Vercel — Vercel hanya perlu izin membacanya.
 
@@ -36,7 +36,7 @@ Di proyek yang sama, buka tab **Storage**:
 1. **Create Database** → **Neon** → region **Singapore** → **Create**
 2. **Create Database** → **Blob** → **Create**
 
-Pastikan keduanya tersambung ke proyek `aliapresensi`. Vercel mengisi
+Pastikan keduanya tersambung ke proyek `presensikaryawan`. Vercel mengisi
 `DATABASE_URL` dan `BLOB_READ_WRITE_TOKEN` sendiri — tidak ada yang perlu
 disalin atau diketik.
 

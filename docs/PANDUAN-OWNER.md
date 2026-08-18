@@ -1,13 +1,30 @@
-# Panduan Mencoba AliaPresensi
+# Panduan Memakai Aplikasi Presensi
 
-Panduan ini untuk **mencoba aplikasi di komputer sendiri**. Tidak perlu membeli
-domain, tidak perlu menyewa server, dan tidak perlu memasang database apa pun.
+Aplikasi sudah online dan siap dicoba. Cukup buka alamat berikut dari komputer
+atau HP mana pun — tidak perlu memasang apa pun:
+
+## **https://presensikaryawan.vercel.app**
+
+Masuk memakai username `admin` dan password yang diberikan terpisah. **Ganti
+password itu lewat menu Profil begitu berhasil masuk.**
+
+Karena alamatnya sudah HTTPS, absen berfoto dari HP karyawan sudah berfungsi —
+kamera dan GPS hanya diizinkan browser pada alamat HTTPS.
+
+Setelah masuk, lanjutkan ke bagian [Mengisi data](#mengisi-data--urutannya-penting)
+di bawah. Bagian-bagian sebelum itu hanya diperlukan bila Anda ingin menjalankan
+salinan sendiri di komputer untuk keperluan pengembangan.
 
 ---
 
+# Lampiran — menjalankan salinan di komputer sendiri
+
+Bagian ini **tidak diperlukan** untuk memakai aplikasi. Isinya untuk keperluan
+pengembangan atau uji coba terpisah dari data sungguhan.
+
 ## Yang perlu dipahami lebih dulu
 
-Aplikasi ini belum dipasang di internet. Artinya:
+Salinan di komputer sendiri terpisah dari yang online. Artinya:
 
 | Bisa sekarang                                       | Belum bisa sekarang                             |
 | --------------------------------------------------- | ----------------------------------------------- |
@@ -39,7 +56,7 @@ Node.js adalah program yang menjalankan aplikasi ini. Cukup dipasang sekali.
 
 ## Langkah 2 — Unduh aplikasinya
 
-1. Buka **https://github.com/kabul123666/aliapresensi**
+1. Buka **https://github.com/kabul123666/presensikaryawan**
 2. Klik tombol hijau **Code**
 3. Pilih **Download ZIP**
 4. Buka file ZIP yang terunduh, lalu pindahkan foldernya ke Desktop agar mudah dicari
@@ -104,9 +121,9 @@ Setelah muncul tulisan `Ready`, buka browser lalu kunjungi:
 | -------- | ---------- |
 | `admin`  | `admin123` |
 
-**Segera ganti password ini** lewat menu Profil setelah masuk. Password di atas
-tertulis terbuka di halaman GitHub, jadi jangan dipakai saat aplikasi sudah
-online nanti.
+Password bawaan ini **hanya berlaku untuk salinan di komputer sendiri**. Aplikasi
+yang online memakai password tersendiri yang tidak tertulis di mana pun dalam
+repo ini.
 
 - Halaman administrator: **http://localhost:3000/admin**
 - Halaman karyawan: **http://localhost:3000**
