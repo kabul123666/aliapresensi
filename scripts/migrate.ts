@@ -7,6 +7,15 @@ import { jelaskanGalat, pastikanDatabaseBebas } from "./penjaga-db";
  * Driver dipilih otomatis (PGlite untuk dev, Postgres untuk produksi).
  */
 async function main() {
+  // Saat build di Vercel, database belum tentu sudah ditautkan — misalnya pada
+  // deploy pertama, sebelum integrasi Neon dipasang. Melewatinya lebih baik
+  // daripada menggagalkan build, karena deploy berikutnya akan menjalankannya
+  // lagi begitu DATABASE_URL terisi.
+  if (process.env.VERCEL && !process.env.DATABASE_URL) {
+    console.log("→ Lewati migrasi: DATABASE_URL belum diatur di proyek ini.");
+    process.exit(0);
+  }
+
   await pastikanDatabaseBebas();
   const { db, jenis } = await createDb();
   console.log(`→ Menerapkan migrasi ke ${jenis}…`);
