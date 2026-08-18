@@ -153,6 +153,31 @@ function FormKaryawan({
         </div>
       )}
 
+      {opsi.lokasi.length > 1 && (
+        <div>
+          <Label htmlFor="lokasiTambahan">Cabang tambahan</Label>
+          <div className="border-app bg-surface-muted mt-1.5 space-y-1.5 rounded-[var(--radius-input)] border p-3">
+            {opsi.lokasi.map((l) => (
+              <label key={l.id} className="flex cursor-pointer items-center gap-2.5">
+                <input
+                  type="checkbox"
+                  name="lokasiTambahan"
+                  value={l.id}
+                  defaultChecked={karyawan?.lokasiTambahanIds?.includes(l.id) ?? false}
+                  className="accent-brand-600 size-4"
+                />
+                <span className="text-body text-sm">{l.nama}</span>
+              </label>
+            ))}
+          </div>
+          <Hint>
+            Untuk jabatan yang berkeliling — ia boleh absen di lokasi kerjanya maupun di
+            cabang yang dicentang di sini. Biarkan kosong bila hanya bertugas di satu
+            tempat.
+          </Hint>
+        </div>
+      )}
+
       <label className="border-app bg-surface-muted flex cursor-pointer items-start gap-3 rounded-[var(--radius-input)] border p-3.5">
         <input
           type="checkbox"
@@ -311,6 +336,8 @@ export function PanelKaryawan({
 }) {
   const router = useRouter();
   const [modal, setModal] = useState<"tambah" | "ubah" | null>(null);
+  const [resetUntuk, setResetUntuk] = useState<BarisKaryawan | null>(null);
+  const [passwordBaru, setPasswordBaru] = useState("");
   const [terpilih, setTerpilih] = useState<BarisKaryawan | null>(null);
   const [hasil, setHasil] = useState<HasilKaryawan | null>(null);
   const [password, setPassword] = useState<string | null>(null);
@@ -478,7 +505,10 @@ export function PanelKaryawan({
                           title="Reset password"
                           aria-label={`Reset password ${k.nama}`}
                           disabled={proses}
-                          onClick={() => jalankan(() => aksiResetPassword(k.userId))}
+                          onClick={() => {
+                            setPasswordBaru("");
+                            setResetUntuk(k);
+                          }}
                           className="text-muted hover:bg-surface-muted hover:text-body grid size-9 place-items-center rounded-lg transition-colors"
                         >
                           <KeyRound size={16} />
@@ -523,6 +553,58 @@ export function PanelKaryawan({
           </div>
         )}
       </div>
+
+      {/* Dialog ganti password */}
+      {resetUntuk && (
+        <div className="fixed inset-0 z-50 grid place-items-center p-4">
+          <div
+            className="absolute inset-0 bg-[var(--overlay)]"
+            onClick={() => setResetUntuk(null)}
+          />
+          <div className="bg-surface border-app relative w-full max-w-md rounded-[var(--radius-sheet)] border p-6 shadow-[var(--shadow-float)]">
+            <h2 className="text-body text-base font-extrabold">
+              Ganti password {resetUntuk.nama}
+            </h2>
+            <p className="text-muted mt-1.5 text-sm leading-relaxed">
+              Password lama tidak bisa ditampilkan karena yang tersimpan hanya hash-nya.
+              Tentukan penggantinya, atau kosongkan untuk dibuatkan acak.
+            </p>
+
+            <div className="mt-4">
+              <Label htmlFor="passwordBaru">Password baru</Label>
+              <Input
+                id="passwordBaru"
+                value={passwordBaru}
+                onChange={(e) => setPasswordBaru(e.target.value)}
+                autoComplete="off"
+                className="font-mono"
+                placeholder="Kosongkan untuk password acak"
+              />
+              <Hint>Minimal 8 karakter bila diisi.</Hint>
+            </div>
+
+            <div className="mt-5 flex gap-2">
+              <Button
+                type="button"
+                disabled={proses}
+                onClick={() => {
+                  const p = passwordBaru;
+                  const u = resetUntuk.userId;
+                  setResetUntuk(null);
+                  jalankan(() => aksiResetPassword(u, p || undefined));
+                }}
+                className="flex-1"
+              >
+                {proses && <Loader2 size={16} className="animate-spin" />}
+                Ganti password
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setResetUntuk(null)}>
+                Batal
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal formulir */}
       {modal && (

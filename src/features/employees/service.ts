@@ -1,10 +1,11 @@
 import "server-only";
 
-import { and, asc, count, eq, ilike, ne, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, eq, ilike, inArray, ne, or, sql, type SQL } from "drizzle-orm";
 
 import { getDb } from "@/db/client";
 import {
   departments,
+  employeeLocations,
   employees,
   locations,
   positions,
@@ -39,6 +40,8 @@ export type BarisKaryawan = {
   punyaDevice: boolean;
   /** Ikut pencatatan kehadiran; false untuk akun pengelola sistem. */
   wajibAbsen: boolean;
+  /** Cabang tambahan tempat ia juga boleh absen, selain lokasi utamanya. */
+  lokasiTambahanIds: string[];
 };
 
 export async function daftarKaryawan(filter: FilterKaryawan = {}) {
@@ -88,9 +91,30 @@ export async function daftarKaryawan(filter: FilterKaryawan = {}) {
     .orderBy(asc(employees.nama))
     .limit(300);
 
+  // Cabang tambahan diambil sekali untuk seluruh baris, bukan per karyawan,
+  // supaya daftar sepanjang apa pun tetap dua kueri.
+  const idKaryawan = baris.map((b) => b.employeeId);
+  const tambahan = idKaryawan.length
+    ? await db
+        .select({
+          employeeId: employeeLocations.employeeId,
+          locationId: employeeLocations.locationId,
+        })
+        .from(employeeLocations)
+        .where(inArray(employeeLocations.employeeId, idKaryawan))
+    : [];
+
+  const petaLokasi = new Map<string, string[]>();
+  for (const t of tambahan) {
+    const daftar = petaLokasi.get(t.employeeId) ?? [];
+    daftar.push(t.locationId);
+    petaLokasi.set(t.employeeId, daftar);
+  }
+
   return baris.map(({ deviceFingerprint, ...sisa }): BarisKaryawan => ({
     ...sisa,
     punyaDevice: Boolean(deviceFingerprint),
+    lokasiTambahanIds: petaLokasi.get(sisa.employeeId) ?? [],
   }));
 }
 

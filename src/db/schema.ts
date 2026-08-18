@@ -287,6 +287,31 @@ export const shiftSchedules = pgTable(
   (t) => [unique("shift_schedules_unique").on(t.employeeId, t.tanggal)],
 );
 
+/**
+ * Cabang tambahan tempat seorang karyawan boleh absen.
+ *
+ * Jabatan pengawas ke atas tidak terikat satu cabang — mereka berkeliling dan
+ * harus bisa absen di mana pun sedang bertugas. Lokasi utama tetap disimpan di
+ * employees.locationId sebagai penempatan resminya; tabel ini menambah cabang
+ * lain yang juga diizinkan, sehingga geofence menerima salah satunya.
+ */
+export const employeeLocations = pgTable(
+  "employee_locations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    employeeId: uuid("employee_id")
+      .notNull()
+      .references(() => employees.id, { onDelete: "cascade" }),
+    locationId: uuid("location_id")
+      .notNull()
+      .references(() => locations.id, { onDelete: "cascade" }),
+  },
+  (t) => [
+    unique("employee_locations_unique").on(t.employeeId, t.locationId),
+    index("employee_locations_employee_idx").on(t.employeeId),
+  ],
+);
+
 export const attendances = pgTable(
   "attendances",
   {

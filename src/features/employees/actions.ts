@@ -9,6 +9,7 @@ import { z } from "zod";
 import { getDb } from "@/db/client";
 import {
   auditLogs,
+  employeeLocations,
   employees,
   leaveBalances,
   leaveTypes,
@@ -73,6 +74,29 @@ async function siapkanSaldoCuti(employeeId: string) {
   if (baris.length) await db.insert(leaveBalances).values(baris).onConflictDoNothing();
 }
 
+/**
+ * Menyimpan daftar cabang tambahan seorang karyawan.
+ *
+ * Lokasi utama sengaja dibuang dari daftar ini supaya tidak tersimpan dua kali
+ * — ia sudah tercatat di kolom employees.locationId.
+ */
+async function simpanLokasiTambahan(
+  employeeId: string,
+  dipilih: string[] | undefined,
+  lokasiUtama: string | null,
+) {
+  const db = await getDb();
+  await db.delete(employeeLocations).where(eq(employeeLocations.employeeId, employeeId));
+
+  const bersih = [...new Set(dipilih ?? [])].filter((id) => id && id !== lokasiUtama);
+  if (bersih.length === 0) return;
+
+  await db
+    .insert(employeeLocations)
+    .values(bersih.map((locationId) => ({ employeeId, locationId })))
+    .onConflictDoNothing();
+}
+
 /* ========================================================================== */
 
 const skemaTambah = z.object({
@@ -93,6 +117,8 @@ const skemaTambah = z.object({
   tanggalMasuk: z.string().trim().optional().or(z.literal("")),
   gajiPokok: z.coerce.number().int().min(0).max(1_000_000_000).optional(),
   wajibAbsen: z.coerce.boolean().optional(),
+  /** Cabang tambahan tempat ia juga boleh absen (selain lokasi utama). */
+  lokasiTambahan: z.array(z.string().uuid()).optional(),
 });
 
 /**
@@ -108,6 +134,7 @@ export async function aksiTambahKaryawan(
   const parsed = skemaTambah.safeParse({
     ...mentah,
     wajibAbsen: mentah.wajibAbsen === "on" || mentah.wajibAbsen === "true",
+    lokasiTambahan: formData.getAll("lokasiTambahan").filter(Boolean),
   });
   if (!parsed.success) {
     return { ok: false, pesan: parsed.error.issues[0].message };
@@ -153,6 +180,7 @@ export async function aksiTambahKaryawan(
     })
     .returning();
 
+  await simpanLokasiTambahan(karyawan.id, d.lokasiTambahan, d.locationId || null);
   await siapkanSaldoCuti(karyawan.id);
 
   const info = await infoPermintaan();
@@ -303,8 +331,18 @@ export async function aksiUbahStatusAkun(
   };
 }
 
-/** Reset password menjadi password sementara yang ditampilkan sekali ke admin. */
-export async function aksiResetPassword(userId: string): Promise<HasilKaryawan> {
+/**
+ * Mengganti password sebuah akun.
+ *
+ * Password lama tidak bisa ditampilkan — yang tersimpan hanyalah hash scrypt,
+ * dan sifatnya satu arah. Karena itu menolong karyawan yang lupa dilakukan
+ * dengan menggantinya, bukan membacanya. Admin boleh menentukan sendiri
+ * penggantinya supaya mudah disampaikan; bila dikosongkan, dibuatkan acak.
+ */
+export async function aksiResetPassword(
+  userId: string,
+  passwordPilihan?: string,
+): Promise<HasilKaryawan> {
   const pengguna = await wajibPeran(...PERAN_ADMIN);
   const db = await getDb();
 
@@ -318,7 +356,12 @@ export async function aksiResetPassword(userId: string): Promise<HasilKaryawan> 
     return { ok: false, pesan: "Hanya super admin yang boleh mereset akun super admin." };
   }
 
-  const password = buatPasswordSementara();
+  const diketik = passwordPilihan?.trim();
+  if (diketik && diketik.length < 8) {
+    return { ok: false, pesan: "Password minimal 8 karakter." };
+  }
+  const password = diketik || buatPasswordSementara();
+
   await db
     .update(users)
     .set({
@@ -371,6 +414,8 @@ const skemaUbah = z.object({
   shiftId: z.string().uuid().optional().or(z.literal("")),
   tipeKaryawan: z.string().trim().max(40).optional(),
   gajiPokok: z.coerce.number().int().min(0).max(1_000_000_000).optional(),
+  wajibAbsen: z.coerce.boolean().optional(),
+  lokasiTambahan: z.array(z.string().uuid()).optional(),
 });
 
 /** Memperbarui data kepegawaian. */
@@ -379,7 +424,12 @@ export async function aksiUbahKaryawan(
   formData: FormData,
 ): Promise<HasilKaryawan> {
   const pengguna = await wajibPeran(...PERAN_ADMIN);
-  const parsed = skemaUbah.safeParse(Object.fromEntries(formData));
+  const mentahUbah = Object.fromEntries(formData);
+  const parsed = skemaUbah.safeParse({
+    ...mentahUbah,
+    wajibAbsen: mentahUbah.wajibAbsen === "on" || mentahUbah.wajibAbsen === "true",
+    lokasiTambahan: formData.getAll("lokasiTambahan").filter(Boolean),
+  });
   if (!parsed.success) return { ok: false, pesan: parsed.error.issues[0].message };
 
   const d = parsed.data;
@@ -415,8 +465,11 @@ export async function aksiUbahKaryawan(
       shiftId: d.shiftId || null,
       tipeKaryawan: d.tipeKaryawan || sebelum.tipeKaryawan,
       gajiPokok: d.gajiPokok ?? sebelum.gajiPokok,
+      wajibAbsen: d.wajibAbsen ?? sebelum.wajibAbsen,
     })
     .where(eq(employees.id, d.employeeId));
+
+  await simpanLokasiTambahan(d.employeeId, d.lokasiTambahan, d.locationId || null);
 
   if (akun?.role !== "SUPER_ADMIN") {
     await db

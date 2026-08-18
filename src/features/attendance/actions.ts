@@ -10,6 +10,7 @@ import {
   attendances,
   auditLogs,
   employees,
+  employeeLocations,
   locations,
   procedureCatalog,
   procedureFeeRates,
@@ -18,7 +19,7 @@ import {
 } from "@/db/schema";
 import { wajibMasuk, type PenggunaSesi } from "@/lib/auth/session";
 import { MAKS_UKURAN_FOTO, olahFotoAbsensi, terlihatSepertiGambar } from "@/lib/foto";
-import { alamatDariKoordinat, evaluasiGeofence } from "@/lib/geo";
+import { alamatDariKoordinat, evaluasiGeofence, type HasilGeofence } from "@/lib/geo";
 import { kunciFotoAbsensi, storage } from "@/lib/storage";
 import { tanggalWIB } from "@/lib/waktu";
 import { bacaPengaturan } from "@/features/settings/service";
@@ -92,6 +93,69 @@ async function muatLokasi(pengguna: PenggunaSesi) {
   return lokasi ?? null;
 }
 
+/**
+ * Seluruh cabang tempat karyawan ini boleh absen: penempatan utamanya
+ * ditambah cabang lain yang ditugaskan kepadanya.
+ */
+async function muatSemuaLokasi(pengguna: PenggunaSesi) {
+  const db = await getDb();
+
+  const tambahan = await db
+    .select({ lokasi: locations })
+    .from(employeeLocations)
+    .innerJoin(locations, eq(locations.id, employeeLocations.locationId))
+    .where(eq(employeeLocations.employeeId, pengguna.employeeId));
+
+  const utama = await muatLokasi(pengguna);
+  const semua = utama ? [utama] : [];
+
+  for (const { lokasi } of tambahan) {
+    if (!semua.some((l) => l.id === lokasi.id)) semua.push(lokasi);
+  }
+  return semua;
+}
+
+/**
+ * Memilih cabang yang dipakai menilai absensi kali ini.
+ *
+ * Karyawan lintas cabang bisa berdiri di dekat cabang mana pun, jadi yang
+ * dipakai adalah cabang yang benar-benar melingkupinya. Bila tak satu pun
+ * melingkupi, dipilih yang terdekat supaya pesan galat dan jaraknya menunjuk
+ * tempat yang paling masuk akal, bukan cabang pertama yang kebetulan terdaftar.
+ */
+async function pilihLokasi(
+  pengguna: PenggunaSesi,
+  posisi: { lat: number; lng: number; akurasi: number | null },
+) {
+  const semua = await muatSemuaLokasi(pengguna);
+  if (semua.length === 0) return null;
+
+  let terbaik: { lokasi: (typeof semua)[number]; geo: HasilGeofence } | null = null;
+
+  for (const lokasi of semua) {
+    const geo = evaluasiGeofence({
+      lat: posisi.lat,
+      lng: posisi.lng,
+      akurasiM: posisi.akurasi,
+      lokasi,
+    });
+
+    if (!terbaik) {
+      terbaik = { lokasi, geo };
+      continue;
+    }
+
+    const lebihBaik =
+      (!geo.diLuarArea && terbaik.geo.diLuarArea) ||
+      (geo.diLuarArea === terbaik.geo.diLuarArea &&
+        geo.jarakEfektifM < terbaik.geo.jarakEfektifM);
+
+    if (lebihBaik) terbaik = { lokasi, geo };
+  }
+
+  return terbaik;
+}
+
 /* ========================================================================== */
 
 export async function aksiClockIn(
@@ -148,17 +212,11 @@ export async function aksiClockIn(
     };
   }
 
-  const lokasi = await muatLokasi(pengguna);
-  if (!lokasi) {
+  const terpilih = await pilihLokasi(pengguna, posisi);
+  if (!terpilih) {
     return { ok: false, pesan: "Lokasi kerja Anda belum diatur. Hubungi HRD." };
   }
-
-  const geo = evaluasiGeofence({
-    lat: posisi.lat,
-    lng: posisi.lng,
-    akurasiM: posisi.akurasi,
-    lokasi,
-  });
+  const { lokasi, geo } = terpilih;
 
   if (!geo.diizinkan) return { ok: false, pesan: geo.pesan, kode: "DILUAR_AREA" };
   if (geo.butuhAlasan && !posisi.alasan) {
@@ -327,15 +385,12 @@ export async function aksiClockOut(
   // absen masuk harus selalu bisa menutup sesinya, apa pun keadaan jadwalnya.
   const { shift } = await shiftBerlaku(pengguna.employeeId, aktif.tanggal);
 
-  const lokasi = await muatLokasi(pengguna);
-  if (!lokasi) return { ok: false, pesan: "Lokasi kerja belum diatur. Hubungi HRD." };
+  const terpilih = await pilihLokasi(pengguna, posisi);
+  if (!terpilih) {
+    return { ok: false, pesan: "Lokasi kerja belum diatur. Hubungi HRD." };
+  }
+  const { lokasi, geo } = terpilih;
 
-  const geo = evaluasiGeofence({
-    lat: posisi.lat,
-    lng: posisi.lng,
-    akurasiM: posisi.akurasi,
-    lokasi,
-  });
   if (!geo.diizinkan) return { ok: false, pesan: geo.pesan, kode: "DILUAR_AREA" };
   if (geo.butuhAlasan && !posisi.alasan) {
     return { ok: false, pesan: geo.pesan, kode: "BUTUH_ALASAN" };
