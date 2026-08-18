@@ -229,6 +229,15 @@ export const employees = pgTable(
     tipeKaryawan: varchar("tipe_karyawan", { length: 40 }).notNull().default("TETAP"),
     tanggalMasuk: date("tanggal_masuk"),
     fotoProfil: text("foto_profil"),
+    /**
+     * Dipakai memilih gambar diri bawaan ketika karyawan belum mengunggah
+     * foto. Boleh dikosongkan — tidak semua orang mau mengisinya, dan
+     * aplikasi tetap berjalan tanpa keterangan ini.
+     */
+    jenisKelamin: varchar("jenis_kelamin", { length: 12 }),
+    tanggalLahir: date("tanggal_lahir"),
+    tempatLahir: varchar("tempat_lahir", { length: 120 }),
+    email: varchar("email", { length: 160 }),
     gajiPokok: integer("gaji_pokok"),
     /** Perangkat utama yang diikat ke akun ini (PRD §6.2, anti titip absen). */
     deviceFingerprint: varchar("device_fingerprint", { length: 128 }),
