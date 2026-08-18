@@ -50,7 +50,13 @@ export async function karyawanRoster(): Promise<KaryawanRoster[]> {
     .from(employees)
     .innerJoin(users, eq(users.id, employees.userId))
     .leftJoin(positions, eq(positions.id, employees.positionId))
-    .where(and(eq(employees.aktif, true), eq(users.status, "ACTIVE")))
+    .where(
+      and(
+        eq(employees.aktif, true),
+        eq(users.status, "ACTIVE"),
+        eq(employees.wajibAbsen, true),
+      ),
+    )
     .orderBy(asc(employees.nama));
 }
 

@@ -92,6 +92,7 @@ const skemaTambah = z.object({
   tipeKaryawan: z.string().trim().max(40).default("TETAP"),
   tanggalMasuk: z.string().trim().optional().or(z.literal("")),
   gajiPokok: z.coerce.number().int().min(0).max(1_000_000_000).optional(),
+  wajibAbsen: z.coerce.boolean().optional(),
 });
 
 /**
@@ -103,7 +104,11 @@ export async function aksiTambahKaryawan(
   formData: FormData,
 ): Promise<HasilKaryawan> {
   const pengguna = await wajibPeran(...PERAN_ADMIN);
-  const parsed = skemaTambah.safeParse(Object.fromEntries(formData));
+  const mentah = Object.fromEntries(formData);
+  const parsed = skemaTambah.safeParse({
+    ...mentah,
+    wajibAbsen: mentah.wajibAbsen === "on" || mentah.wajibAbsen === "true",
+  });
   if (!parsed.success) {
     return { ok: false, pesan: parsed.error.issues[0].message };
   }
@@ -143,6 +148,7 @@ export async function aksiTambahKaryawan(
       tipeKaryawan: d.tipeKaryawan || "TETAP",
       tanggalMasuk: d.tanggalMasuk || tanggalWIB(),
       gajiPokok: d.gajiPokok ?? null,
+      wajibAbsen: d.wajibAbsen ?? true,
       aktif: true,
     })
     .returning();

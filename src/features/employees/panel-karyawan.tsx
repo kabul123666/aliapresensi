@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input, Label, Select } from "@/components/ui/field";
+import { Hint, Input, Label, Select } from "@/components/ui/field";
 import { Badge } from "@/components/ui/status";
 import type { Role, UserStatus } from "@/db/schema";
 import { cn, inisial } from "@/lib/utils";
@@ -133,15 +133,41 @@ function FormKaryawan({
       {!ubah && (
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" required />
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              name="username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              className="font-mono"
+              required
+            />
+            <Hint>3–40 karakter: huruf kecil, angka, titik, dan garis bawah.</Hint>
           </div>
           <div>
             <Label htmlFor="nik">NIK / NIP</Label>
-            <Input id="nik" name="nik" required />
+            <Input id="nik" name="nik" />
+            <Hint>Boleh dikosongkan.</Hint>
           </div>
         </div>
       )}
+
+      <label className="border-app bg-surface-muted flex cursor-pointer items-start gap-3 rounded-[var(--radius-input)] border p-3.5">
+        <input
+          type="checkbox"
+          name="wajibAbsen"
+          defaultChecked={karyawan?.wajibAbsen ?? true}
+          className="accent-brand-600 mt-0.5 size-4"
+        />
+        <span>
+          <span className="text-body block text-sm font-bold">Mencatatkan kehadiran</span>
+          <span className="text-muted mt-0.5 block text-[13px]">
+            Matikan untuk akun pengelola yang tidak ikut absen — ia tidak akan terhitung
+            sebagai belum absen, dan tidak muncul di rekap maupun jadwal jaga.
+          </span>
+        </span>
+      </label>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>

@@ -37,6 +37,8 @@ export type BarisKaryawan = {
   shift: string | null;
   tanggalMasuk: string | null;
   punyaDevice: boolean;
+  /** Ikut pencatatan kehadiran; false untuk akun pengelola sistem. */
+  wajibAbsen: boolean;
 };
 
 export async function daftarKaryawan(filter: FilterKaryawan = {}) {
@@ -68,6 +70,7 @@ export async function daftarKaryawan(filter: FilterKaryawan = {}) {
       role: users.role,
       status: users.status,
       aktif: employees.aktif,
+      wajibAbsen: employees.wajibAbsen,
       jabatan: positions.nama,
       departemen: departments.nama,
       lokasi: locations.nama,

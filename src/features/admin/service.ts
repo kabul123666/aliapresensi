@@ -21,7 +21,14 @@ export async function ringkasanHariIni(tanggal = tanggalWIB()) {
     .select({ total: sql<number>`count(*)` })
     .from(employees)
     .innerJoin(users, eq(users.id, employees.userId))
-    .where(and(eq(employees.aktif, true), eq(users.status, "ACTIVE")));
+    .where(
+      and(
+        eq(employees.aktif, true),
+        eq(employees.wajibAbsen, true),
+        eq(users.status, "ACTIVE"),
+        eq(employees.wajibAbsen, true),
+      ),
+    );
 
   const [absen] = await db
     .select({
@@ -108,6 +115,7 @@ export async function belumAbsen(tanggal = tanggalWIB()) {
     .where(
       and(
         eq(employees.aktif, true),
+        eq(employees.wajibAbsen, true),
         eq(users.status, "ACTIVE"),
         sql`${employees.id} not in ${sudah}`,
       ),

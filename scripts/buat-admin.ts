@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { createDb, schema } from "../src/db/driver";
 import { hashPassword } from "../src/lib/auth/password";
@@ -50,8 +50,16 @@ async function main() {
     .limit(1);
 
   if (sudahAda) {
-    console.log(`• Akun "${USERNAME}" sudah ada. Tidak ada yang diubah.`);
-    console.log("  Jalankan `npm run db:reset` bila ingin mulai dari nol.");
+    // Administrator sistem bukan karyawan yang absen. Penanda ini ditegakkan
+    // ulang setiap kali skrip berjalan supaya akun yang terlanjur dibuat
+    // sebelum penanda itu ada ikut diperbaiki, tanpa menyentuh apa pun yang lain.
+    const { rowCount } = await db
+      .update(employees)
+      .set({ wajibAbsen: false })
+      .where(and(eq(employees.userId, sudahAda.id), eq(employees.wajibAbsen, true)));
+
+    console.log(`• Akun "${USERNAME}" sudah ada. Password tidak diubah.`);
+    if (rowCount) console.log("  Ditandai sebagai akun non-absensi.");
     process.exit(0);
   }
 
@@ -70,6 +78,8 @@ async function main() {
     nama: "Administrator",
     tanggalMasuk: tanggalWIB(),
     aktif: true,
+    // Pengelola sistem, bukan karyawan yang mencatatkan kehadiran.
+    wajibAbsen: false,
   });
 
   console.log(`✓ Akun administrator dibuat di ${jenis}.\n`);

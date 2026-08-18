@@ -232,6 +232,12 @@ export const employees = pgTable(
     gajiPokok: integer("gaji_pokok"),
     /** Perangkat utama yang diikat ke akun ini (PRD §6.2, anti titip absen). */
     deviceFingerprint: varchar("device_fingerprint", { length: 128 }),
+    /**
+     * Apakah orang ini ikut pencatatan kehadiran. Akun administrator sistem
+     * bukan karyawan yang absen, sehingga tidak boleh ikut terhitung sebagai
+     * "belum absen" di dashboard maupun muncul di rekap dan jadwal jaga.
+     */
+    wajibAbsen: boolean("wajib_absen").notNull().default(true),
     aktif: boolean("aktif").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

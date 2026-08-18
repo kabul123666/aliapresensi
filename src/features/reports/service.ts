@@ -252,7 +252,7 @@ export async function opsiPenyaring() {
     db
       .select({ id: employees.id, nama: employees.nama })
       .from(employees)
-      .where(eq(employees.aktif, true))
+      .where(and(eq(employees.aktif, true), eq(employees.wajibAbsen, true)))
       .orderBy(asc(employees.nama)),
   ]);
   return { departemen: dept, karyawan: kary };
@@ -275,7 +275,11 @@ export async function hitungAlpa(filter: FilterRekap): Promise<Record<string, nu
   const batasAkhir = akhir <= kemarin ? akhir : kemarin;
   if (selisihHari(mulai, batasAkhir) < 0) return {};
 
-  const syaratKaryawan = [eq(employees.aktif, true), eq(users.status, "ACTIVE")];
+  const syaratKaryawan = [
+    eq(employees.aktif, true),
+    eq(users.status, "ACTIVE"),
+    eq(employees.wajibAbsen, true),
+  ];
   if (filter.departmentId) {
     syaratKaryawan.push(eq(employees.departmentId, filter.departmentId));
   }

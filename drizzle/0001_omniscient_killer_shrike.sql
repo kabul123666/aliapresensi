@@ -1,0 +1,1 @@
+ALTER TABLE "employees" ADD COLUMN "wajib_absen" boolean DEFAULT true NOT NULL;
