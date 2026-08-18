@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { ArrowLeft, MapPin } from "lucide-react";
 
@@ -9,7 +9,7 @@ import { getDb } from "@/db/client";
 import { departments, employees, positions, users } from "@/db/schema";
 import { detailHarian, rekapPeriode } from "@/features/reports/service";
 import { TombolCetak } from "@/features/reports/tombol-cetak";
-import { PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
+import { lingkupData, PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
 import { formatDurasi, formatRupiah } from "@/lib/utils";
 import { jamWIB, namaBulan, tanggalPanjang, tanggalWIB } from "@/lib/waktu";
 
@@ -19,6 +19,7 @@ const LABEL_FLAG: Record<string, string> = {
   DILUAR_AREA_PULANG: "Pulang di luar area",
   DEVICE_BARU: "Perangkat baru",
   HARI_LIBUR: "Absen di hari libur",
+  TANPA_SHIFT: "Tanpa shift terjadwal",
 };
 
 export default async function HalamanDetailAbsensi({
@@ -28,7 +29,7 @@ export default async function HalamanDetailAbsensi({
   params: Promise<{ employeeId: string }>;
   searchParams: Promise<{ bulan?: string }>;
 }) {
-  await wajibPeran(...PERAN_PENYETUJU);
+  const pengguna = await wajibPeran(...PERAN_PENYETUJU);
   const { employeeId } = await params;
   const sp = await searchParams;
 
@@ -44,6 +45,7 @@ export default async function HalamanDetailAbsensi({
       nik: users.nik,
       jabatan: positions.nama,
       departemen: departments.nama,
+      departmentId: employees.departmentId,
     })
     .from(employees)
     .innerJoin(users, eq(users.id, employees.userId))
@@ -53,6 +55,12 @@ export default async function HalamanDetailAbsensi({
     .limit(1);
 
   if (!karyawan) notFound();
+
+  // Manager hanya boleh membuka anggota departemennya sendiri.
+  const lingkup = lingkupData(pengguna);
+  if (!lingkup.semua && karyawan.departmentId !== lingkup.departmentId) {
+    redirect("/tidak-berwenang");
+  }
 
   const [detail, rekap] = await Promise.all([
     detailHarian({ tahun, bulan, employeeId }),

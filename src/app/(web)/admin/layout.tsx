@@ -3,7 +3,7 @@ import Link from "next/link";
 import { SidebarAdmin } from "@/components/web/sidebar-admin";
 import { TopbarAdmin } from "@/components/web/topbar-admin";
 import { ringkasanHariIni } from "@/features/admin/service";
-import { PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
+import { bolehKelolaSemua, PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
 
 /**
  * Kerangka dashboard admin — sengaja dibuat berbeda total dari aplikasi
@@ -21,6 +21,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           persetujuan: ringkas.menungguPersetujuan,
           pendaftaran: ringkas.pendaftaranBaru,
         }}
+        adminPenuh={bolehKelolaSemua(pengguna.role)}
       />
 
       <div className="lg:pl-[248px]">

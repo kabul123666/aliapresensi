@@ -173,3 +173,22 @@ export const PERAN_PENYETUJU: Role[] = ["SUPER_ADMIN", "ADMIN", "MANAGER"];
 export function bolehKelolaSemua(role: Role) {
   return PERAN_ADMIN.includes(role);
 }
+
+/**
+ * Sejauh mana seorang penyetuju boleh melihat data kepegawaian.
+ *
+ * Admin dan Super Admin melihat seluruh rumah sakit. Manager hanya melihat
+ * departemennya sendiri (PRD §2: "lihat rekap timnya saja") — tabel
+ * `departments` belum menyimpan siapa kepalanya, jadi yang dipakai adalah
+ * departemen tempat manager itu terdaftar.
+ *
+ * Nilainya dipakai untuk menyempitkan kueri, bukan untuk menyembunyikan
+ * tombol: pembatasannya harus tetap berlaku walau alamatnya diketik langsung.
+ */
+export type LingkupData =
+  { semua: true; departmentId: null } | { semua: false; departmentId: string | null };
+
+export function lingkupData(pengguna: PenggunaSesi): LingkupData {
+  if (PERAN_ADMIN.includes(pengguna.role)) return { semua: true, departmentId: null };
+  return { semua: false, departmentId: pengguna.departmentId };
+}

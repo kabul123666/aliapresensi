@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/card";
 import { TombolCetak } from "@/features/reports/tombol-cetak";
 import { opsiPenyaring, rekapPeriode, totalRekap } from "@/features/reports/service";
-import { PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
+import { lingkupData, PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
 import { cn, formatDurasi, formatRupiah } from "@/lib/utils";
 import { namaBulan, tanggalWIB } from "@/lib/waktu";
 
@@ -15,7 +15,7 @@ export default async function HalamanRekapAbsensi({
 }: {
   searchParams: Promise<{ bulan?: string; dept?: string }>;
 }) {
-  await wajibPeran(...PERAN_PENYETUJU);
+  const pengguna = await wajibPeran(...PERAN_PENYETUJU);
   const sp = await searchParams;
 
   const kini = tanggalWIB();
@@ -23,8 +23,29 @@ export default async function HalamanRekapAbsensi({
   const tahun = cocok ? Number(cocok[1]) : Number(kini.slice(0, 4));
   const bulan = cocok ? Number(cocok[2]) : Number(kini.slice(5, 7));
 
+  // Manager terkunci ke departemennya; parameter ?dept dari alamat diabaikan
+  // sepenuhnya agar batas ini tidak bisa dilangkahi dengan mengetik URL.
+  const lingkup = lingkupData(pengguna);
+  const departmentId = lingkup.semua ? sp.dept : (lingkup.departmentId ?? undefined);
+
+  if (!lingkup.semua && !lingkup.departmentId) {
+    return (
+      <div className="grid min-h-[50dvh] place-items-center">
+        <div className="max-w-md text-center">
+          <h1 className="text-body text-xl font-extrabold tracking-tight">
+            Departemen Anda belum ditetapkan
+          </h1>
+          <p className="text-muted mt-3 text-sm leading-relaxed">
+            Rekap kehadiran tim hanya bisa ditampilkan setelah HRD menetapkan departemen
+            pada data kepegawaian Anda.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const [baris, opsi] = await Promise.all([
-    rekapPeriode({ tahun, bulan, departmentId: sp.dept }),
+    rekapPeriode({ tahun, bulan, departmentId }),
     opsiPenyaring(),
   ]);
   const total = totalRekap(baris);
@@ -34,7 +55,7 @@ export default async function HalamanRekapAbsensi({
     const t = tahun + Math.floor((m - 1) / 12);
     const b = ((((m - 1) % 12) + 12) % 12) + 1;
     const q = new URLSearchParams({ bulan: `${t}-${String(b).padStart(2, "0")}` });
-    if (sp.dept) q.set("dept", sp.dept);
+    if (departmentId) q.set("dept", departmentId);
     return `/admin/absensi?${q}`;
   };
 
@@ -42,7 +63,7 @@ export default async function HalamanRekapAbsensi({
     tahun: String(tahun),
     bulan: String(bulan),
   });
-  if (sp.dept) paramEkspor.set("dept", sp.dept);
+  if (departmentId) paramEkspor.set("dept", departmentId);
 
   return (
     <div className="space-y-6">
@@ -53,7 +74,9 @@ export default async function HalamanRekapAbsensi({
             Rekap Absensi
           </h1>
           <p className="text-muted mt-1 text-sm">
-            Ringkasan kehadiran seluruh karyawan per periode.
+            {lingkup.semua
+              ? "Ringkasan kehadiran seluruh karyawan per periode."
+              : "Ringkasan kehadiran anggota departemen Anda per periode."}
           </p>
         </div>
         <div className="flex gap-2">
@@ -97,31 +120,40 @@ export default async function HalamanRekapAbsensi({
           </Link>
         </div>
 
-        <form action="/admin/absensi" className="flex gap-2">
-          <input
-            type="hidden"
-            name="bulan"
-            value={`${tahun}-${String(bulan).padStart(2, "0")}`}
-          />
-          <select
-            name="dept"
-            defaultValue={sp.dept ?? ""}
-            className="bg-surface border-app-strong text-body h-10 rounded-[var(--radius-input)] border px-3 text-sm outline-none"
-          >
-            <option value="">Semua departemen</option>
-            {opsi.departemen.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.nama}
-              </option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            className="border-app-strong bg-surface text-body hover:bg-surface-muted h-10 rounded-[var(--radius-input)] border px-4 text-sm font-semibold transition-colors"
-          >
-            Terapkan
-          </button>
-        </form>
+        {lingkup.semua ? (
+          <form action="/admin/absensi" className="flex gap-2">
+            <input
+              type="hidden"
+              name="bulan"
+              value={`${tahun}-${String(bulan).padStart(2, "0")}`}
+            />
+            <select
+              name="dept"
+              defaultValue={sp.dept ?? ""}
+              className="bg-surface border-app-strong text-body h-10 rounded-[var(--radius-input)] border px-3 text-sm outline-none"
+            >
+              <option value="">Semua departemen</option>
+              {opsi.departemen.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.nama}
+                </option>
+              ))}
+            </select>
+            <button
+              type="submit"
+              className="border-app-strong bg-surface text-body hover:bg-surface-muted h-10 rounded-[var(--radius-input)] border px-4 text-sm font-semibold transition-colors"
+            >
+              Terapkan
+            </button>
+          </form>
+        ) : (
+          /* Bukan pemilih, melainkan keterangan: manager tidak punya
+             departemen lain untuk dipilih. */
+          <span className="border-app bg-surface-muted text-muted inline-flex h-10 items-center rounded-[var(--radius-input)] border px-3 text-sm font-semibold">
+            {opsi.departemen.find((d) => d.id === lingkup.departmentId)?.nama ??
+              "Departemen Anda"}
+          </span>
+        )}
       </div>
 
       {/* Ringkasan */}

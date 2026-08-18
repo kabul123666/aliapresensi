@@ -24,6 +24,12 @@ import { cn } from "@/lib/utils";
 
 type Badge = { persetujuan: number; pendaftaran: number };
 
+/**
+ * `hanyaAdmin` menandai modul yang server-nya memang menolak Manager.
+ * Menyaringnya di sini bukan pengamanan — pengamanannya ada di wajibPeran()
+ * pada tiap halaman — melainkan supaya Manager tidak disuguhi delapan menu
+ * yang semuanya berujung ke layar "tidak berwenang".
+ */
 const KELOMPOK = [
   {
     judul: "Operasional",
@@ -37,7 +43,12 @@ const KELOMPOK = [
         badge: "persetujuan" as const,
       },
       { href: "/admin/tindakan", label: "Tindakan & Fee", Ikon: Wallet },
-      { href: "/admin/pengumuman", label: "Pengumuman", Ikon: Megaphone },
+      {
+        href: "/admin/pengumuman",
+        label: "Pengumuman",
+        Ikon: Megaphone,
+        hanyaAdmin: true,
+      },
     ],
   },
   {
@@ -48,25 +59,59 @@ const KELOMPOK = [
         label: "Karyawan",
         Ikon: Users,
         badge: "pendaftaran" as const,
+        hanyaAdmin: true,
       },
-      { href: "/admin/organisasi", label: "Departemen & Jabatan", Ikon: Building2 },
-      { href: "/admin/jadwal", label: "Jadwal Jaga", Ikon: CalendarDays },
-      { href: "/admin/shift", label: "Shift", Ikon: Stethoscope },
-      { href: "/admin/lokasi", label: "Lokasi & Geofence", Ikon: MapPinned },
+      {
+        href: "/admin/organisasi",
+        label: "Departemen & Jabatan",
+        Ikon: Building2,
+        hanyaAdmin: true,
+      },
+      {
+        href: "/admin/jadwal",
+        label: "Jadwal Jaga",
+        Ikon: CalendarDays,
+        hanyaAdmin: true,
+      },
+      { href: "/admin/shift", label: "Shift", Ikon: Stethoscope, hanyaAdmin: true },
+      {
+        href: "/admin/lokasi",
+        label: "Lokasi & Geofence",
+        Ikon: MapPinned,
+        hanyaAdmin: true,
+      },
     ],
   },
   {
     judul: "Sistem",
     menu: [
-      { href: "/admin/pengaturan", label: "Pengaturan", Ikon: Settings },
-      { href: "/admin/audit", label: "Audit Log", Ikon: ScrollText },
+      {
+        href: "/admin/pengaturan",
+        label: "Pengaturan",
+        Ikon: Settings,
+        hanyaAdmin: true,
+      },
+      { href: "/admin/audit", label: "Audit Log", Ikon: ScrollText, hanyaAdmin: true },
     ],
   },
 ];
 
-export function SidebarAdmin({ badge }: { badge: Badge }) {
+export function SidebarAdmin({
+  badge,
+  adminPenuh,
+}: {
+  badge: Badge;
+  adminPenuh: boolean;
+}) {
   const pathname = usePathname();
   const [terbuka, setTerbuka] = useState(false);
+
+  const kelompok = adminPenuh
+    ? KELOMPOK
+    : KELOMPOK.map((k) => ({
+        ...k,
+        menu: k.menu.filter((m) => !("hanyaAdmin" in m && m.hanyaAdmin)),
+      })).filter((k) => k.menu.length > 0);
 
   const isi = (
     <nav className="flex h-full flex-col">
@@ -83,7 +128,7 @@ export function SidebarAdmin({ badge }: { badge: Badge }) {
       </div>
 
       <div className="scrollbar-slim flex-1 overflow-y-auto px-3 py-4">
-        {KELOMPOK.map((k) => (
+        {kelompok.map((k) => (
           <div key={k.judul} className="mb-5">
             <p className="text-subtle px-3 pb-2 text-[10.5px] font-bold tracking-[0.12em] uppercase">
               {k.judul}

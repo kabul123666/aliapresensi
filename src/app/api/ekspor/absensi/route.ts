@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { rekapPeriode, totalRekap } from "@/features/reports/service";
-import { PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
+import { lingkupData, PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
 import { formatDurasi } from "@/lib/utils";
 import { namaBulan, tanggalWIB } from "@/lib/waktu";
 
@@ -13,13 +13,26 @@ import { namaBulan, tanggalWIB } from "@/lib/waktu";
  * admin sebelum menekan tombol unduh.
  */
 export async function GET(request: Request) {
-  await wajibPeran(...PERAN_PENYETUJU);
+  const pengguna = await wajibPeran(...PERAN_PENYETUJU);
 
   const url = new URL(request.url);
   const kini = tanggalWIB();
   const tahun = Number(url.searchParams.get("tahun") ?? kini.slice(0, 4));
   const bulan = Number(url.searchParams.get("bulan") ?? kini.slice(5, 7));
-  const departmentId = url.searchParams.get("dept") ?? undefined;
+
+  // Berkas unduhan menempuh jalur terpisah dari layar, jadi batas departemen
+  // manager harus ditegakkan lagi di sini — bukan diwarisi dari halaman.
+  const lingkup = lingkupData(pengguna);
+  const departmentId = lingkup.semua
+    ? (url.searchParams.get("dept") ?? undefined)
+    : (lingkup.departmentId ?? undefined);
+
+  if (!lingkup.semua && !lingkup.departmentId) {
+    return NextResponse.json(
+      { pesan: "Departemen Anda belum ditetapkan." },
+      { status: 403 },
+    );
+  }
 
   if (!Number.isInteger(tahun) || !Number.isInteger(bulan) || bulan < 1 || bulan > 12) {
     return NextResponse.json({ pesan: "Periode tidak valid" }, { status: 400 });
