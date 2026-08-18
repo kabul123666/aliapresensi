@@ -21,14 +21,15 @@ Simpan baik-baik — di dalamnya ada password database.
 
 1. Masuk ke **https://vercel.com**
 2. **Add New → Project** → pilih repo **aliapresensi** → **Import**
-3. Buka **Environment Variables**, isi empat baris ini:
+3. Buka **Environment Variables**, isi **satu baris ini saja**:
 
-| Nama                   | Isi                                        |
-| ---------------------- | ------------------------------------------ |
-| `DATABASE_URL`         | Connection string dari Neon (langkah 1)    |
-| `STORAGE_DRIVER`       | `blob`                                     |
-| `NOMINATIM_USER_AGENT` | `AliaPresensi/1.0 (email-anda@domain.com)` |
-| `TZ`                   | `Asia/Jakarta`                             |
+| Nama             | Isi                                 |
+| ---------------- | ----------------------------------- |
+| `ADMIN_PASSWORD` | password administrator pilihan Anda |
+
+Sisanya tidak perlu diisi tangan: `DATABASE_URL` dan `BLOB_READ_WRITE_TOKEN`
+diisi otomatis saat database dan penyimpanan ditautkan, zona waktu sudah
+tertanam di kode, dan jenis penyimpanan terdeteksi sendiri dari token Blob.
 
 4. Tekan **Deploy**
 

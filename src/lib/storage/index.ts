@@ -158,9 +158,7 @@ function driverR2(): Storage {
       const { GetObjectCommand } = await import("@aws-sdk/client-s3");
       const s3 = await klien();
       try {
-        const hasil = await s3.send(
-          new GetObjectCommand({ Bucket: bucket, Key: kunci }),
-        );
+        const hasil = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: kunci }));
         return hasil.Body?.transformToWebStream() ?? null;
       } catch {
         return null;
@@ -178,7 +176,15 @@ let instance: Storage | null = null;
 
 export function storage(): Storage {
   if (!instance) {
-    const pilihan = process.env.STORAGE_DRIVER;
+    // Menautkan store Blob di Vercel sudah menitipkan tokennya sendiri, dan
+    // keberadaan token itu satu-satunya alasan store tersebut ada. Jadi ia
+    // dipakai sebagai penanda: tidak perlu menyetel STORAGE_DRIVER secara
+    // terpisah hanya untuk mengulang apa yang sudah jelas. Setelan eksplisit
+    // tetap menang, supaya perpindahan ke R2 nanti cukup satu variabel.
+    const pilihan =
+      process.env.STORAGE_DRIVER ??
+      (process.env.BLOB_READ_WRITE_TOKEN ? "blob" : undefined);
+
     instance =
       pilihan === "r2" ? driverR2() : pilihan === "blob" ? driverBlob() : driverLokal();
   }
