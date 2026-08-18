@@ -18,6 +18,26 @@ const USERNAME = process.env.ADMIN_USERNAME ?? "admin";
 const PASSWORD = process.env.ADMIN_PASSWORD ?? "admin123";
 
 async function main() {
+  // Di Vercel, aplikasi terbuka untuk umum. Membuat administrator berpassword
+  // bawaan di sana sama saja menyerahkan kunci — password bawaannya tertulis
+  // di README yang bisa dibaca siapa pun. Karena itu akun hanya dibuat bila
+  // ADMIN_PASSWORD memang diisi sendiri lewat Environment Variables.
+  if (process.env.VERCEL) {
+    if (!process.env.DATABASE_URL) {
+      console.log("→ Lewati pembuatan admin: DATABASE_URL belum diatur.");
+      process.exit(0);
+    }
+    if (!process.env.ADMIN_PASSWORD) {
+      console.log(
+        [
+          "→ Lewati pembuatan admin: ADMIN_PASSWORD belum diatur.",
+          "  Isi ADMIN_PASSWORD di Environment Variables, lalu Redeploy.",
+        ].join("\n"),
+      );
+      process.exit(0);
+    }
+  }
+
   await pastikanDatabaseBebas();
 
   const { db, jenis } = await createDb();

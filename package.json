@@ -15,7 +15,7 @@
     "db:setup": "npm run db:generate && npm run db:migrate && npm run db:admin",
     "db:reset": "rm -rf .data && npm run db:migrate && npm run db:admin",
     "db:admin": "node --env-file-if-exists=.env.local --import tsx scripts/buat-admin.ts",
-    "vercel-build": "npm run db:migrate && next build"
+    "vercel-build": "npm run db:migrate && npm run db:admin && next build"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1110.0",
