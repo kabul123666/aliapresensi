@@ -3,6 +3,10 @@
 Aplikasi absensi karyawan **Alia Hospital** — clock in/out berfoto dengan geotag,
 pencatatan tindakan ber-fee, jadwal jaga, cuti & lembur, serta dashboard untuk HRD.
 
+> **Baru pertama kali membuka repo ini dan hanya ingin mencobanya?**
+> Ikuti [docs/PANDUAN-OWNER.md](docs/PANDUAN-OWNER.md) — panduan langkah demi
+> langkah tanpa istilah teknis, tanpa perlu hosting maupun domain.
+
 Spesifikasi lengkap ada di [docs/PRD.md](docs/PRD.md).
 
 ## Siapa yang memakai
@@ -46,8 +50,8 @@ diketik saat antre absen pagi. Karyawan yang lupa username atau password menghub
 admin; tidak ada pemulihan lewat email.
 
 Aplikasi sengaja dimulai **kosong**: tidak ada departemen, jabatan, lokasi, shift,
-maupun katalog tindakan bawaan. Layar Dashboard menampilkan daftar langkah
-penyiapan dan mencentangnya sendiri saat Anda mengisinya.
+maupun katalog tindakan bawaan. Urutan pengisiannya ada di
+[docs/PANDUAN-OWNER.md](docs/PANDUAN-OWNER.md).
 
 Admin masuk ke `/admin`, karyawan masuk ke `/`.
 
@@ -65,17 +69,17 @@ Admin masuk ke `/admin`, karyawan masuk ke `/`.
 
 ## Perintah yang tersedia
 
-| Perintah              | Kegunaan                                     |
-| --------------------- | -------------------------------------------- |
-| `npm run dev`         | Jalankan server pengembangan                 |
-| `npm run build`       | Build produksi                               |
-| `npm run typecheck`   | Periksa tipe TypeScript                      |
-| `npm run lint`        | Periksa gaya & aturan kode                   |
-| `npm run format`      | Rapikan format kode                          |
-| `npm run db:generate` | Buat berkas migrasi dari perubahan schema    |
-| `npm run db:migrate`  | Terapkan migrasi                             |
-| `npm run db:seed`     | Isi data awal                                |
-| `npm run db:reset`    | Hapus database lokal lalu isi ulang dari nol |
+| Perintah              | Kegunaan                                   |
+| --------------------- | ------------------------------------------ |
+| `npm run dev`         | Jalankan server pengembangan               |
+| `npm run build`       | Build produksi                             |
+| `npm run typecheck`   | Periksa tipe TypeScript                    |
+| `npm run lint`        | Periksa gaya & aturan kode                 |
+| `npm run format`      | Rapikan format kode                        |
+| `npm run db:generate` | Buat berkas migrasi dari perubahan schema  |
+| `npm run db:migrate`  | Terapkan migrasi                           |
+| `npm run db:setup`    | Migrasi + buat akun admin (instalasi baru) |
+| `npm run db:reset`    | Hapus database lokal lalu buat ulang admin |
 
 ---
 
@@ -152,13 +156,14 @@ Salin `.env.example` menjadi `.env.local`, lalu isi. **Jangan commit `.env.local
 
 ### Aplikasi karyawan (mobile)
 
-| Halaman   | Isi                                                           |
-| --------- | ------------------------------------------------------------- |
-| Beranda   | Jam berjalan, clock in/out berfoto, ringkasan bulan, pintasan |
-| Riwayat   | Kalender berwarna per status + rincian harian                 |
-| Pengajuan | Saldo cuti, form cuti/izin/lembur/koreksi, riwayat pengajuan  |
-| Fee Saya  | Rincian tindakan dan estimasi fee bulan berjalan              |
-| Profil    | Data kepegawaian, perangkat terikat, tema, keluar             |
+| Halaman   | Isi                                                              |
+| --------- | ---------------------------------------------------------------- |
+| Beranda   | Jam berjalan, clock in/out berfoto, ringkasan bulan, pintasan    |
+| Riwayat   | Kalender berwarna per status + rincian harian                    |
+| Pengajuan | Saldo cuti, form cuti/izin/lembur/koreksi, riwayat pengajuan     |
+| Fee Saya  | Rincian tindakan, estimasi fee bulan berjalan, dan slip insentif |
+| Jadwal    | Jadwal jaga sebulan penuh milik sendiri                          |
+| Profil    | Data kepegawaian, perangkat terikat, tema, keluar                |
 
 ### Dashboard admin (web)
 
@@ -180,6 +185,5 @@ Salin `.env.example` menjadi `.env.local`, lalu isi. **Jangan commit `.env.local
 
 - Pengingat absen lewat push notification
 - Pencocokan wajah otomatis (face matching)
-- Roster shift bulanan berbentuk tabel (shift default per karyawan sudah ada)
-- Slip insentif PDF per karyawan
 - Pengiriman email sungguhan (notifikasi saat ini tersimpan di dalam aplikasi)
+- Rate limit tingkat IP, CSP ketat, 2FA admin — perlu sebelum produksi
