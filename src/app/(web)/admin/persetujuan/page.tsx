@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { Card, CardBody } from "@/components/ui/card";
 import type { RequestStatus } from "@/db/schema";
 import { ringkasanAntrean } from "@/features/approval/actions";
@@ -68,7 +66,10 @@ export default async function HalamanPersetujuan({
     <div className="space-y-6">
       <div>
         <h1 className="text-body text-2xl font-extrabold tracking-tight">
-          Antrean Persetujuan
+          Antrean Persetujuan · {TAB.find((t) => t.nilai === status)?.label}
+          <span className="text-muted tnum ml-2 text-lg font-bold">
+            {hitung[status] ?? 0}
+          </span>
         </h1>
         <p className="text-muted mt-1 text-sm">
           Cuti, lembur, koreksi absen, dan absen di luar area dalam satu tempat.
@@ -110,30 +111,6 @@ export default async function HalamanPersetujuan({
             </CardBody>
           </Card>
         ))}
-      </div>
-
-      {/* Penyaring status */}
-      <div className="border-app flex gap-1 overflow-x-auto border-b">
-        {TAB.map((t) => {
-          const aktif = t.nilai === status;
-          return (
-            <Link
-              key={t.nilai}
-              href={`/admin/persetujuan?status=${t.nilai}`}
-              className={cn(
-                "-mb-px border-b-2 px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors",
-                aktif
-                  ? "border-brand-600 text-brand-700 dark:text-brand-300"
-                  : "text-muted hover:text-body border-transparent",
-              )}
-            >
-              {t.label}
-              <span className="text-subtle tnum ml-1.5 text-xs">
-                {hitung[t.nilai] ?? 0}
-              </span>
-            </Link>
-          );
-        })}
       </div>
 
       <TabelPersetujuan

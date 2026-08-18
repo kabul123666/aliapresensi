@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { Card, CardBody } from "@/components/ui/card";
 import type { UserStatus } from "@/db/schema";
 import { antreanPendaftaranBaru } from "@/features/employees/actions";
@@ -46,7 +44,10 @@ export default async function HalamanKaryawan({
     <div className="space-y-6">
       <div>
         <h1 className="text-body text-2xl font-extrabold tracking-tight">
-          Manajemen Karyawan
+          Manajemen Karyawan · {TAB.find((t) => t.nilai === status)?.label}
+          <span className="text-muted tnum ml-2 text-lg font-bold">
+            {hitung[status] ?? 0}
+          </span>
         </h1>
         <p className="text-muted mt-1 text-sm">
           Pendaftaran akun, verifikasi, peran, dan status kepegawaian.
@@ -81,26 +82,6 @@ export default async function HalamanKaryawan({
 
       {/* Penyaring */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="border-app flex gap-1 overflow-x-auto border-b">
-          {TAB.map((t) => (
-            <Link
-              key={t.nilai}
-              href={`/admin/karyawan?status=${t.nilai}`}
-              className={cn(
-                "-mb-px border-b-2 px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors",
-                t.nilai === status
-                  ? "border-brand-600 text-brand-700 dark:text-brand-300"
-                  : "text-muted hover:text-body border-transparent",
-              )}
-            >
-              {t.label}
-              <span className="text-subtle tnum ml-1.5 text-xs">
-                {hitung[t.nilai] ?? 0}
-              </span>
-            </Link>
-          ))}
-        </div>
-
         <form className="flex gap-2" action="/admin/karyawan">
           <input type="hidden" name="status" value={status} />
           <input

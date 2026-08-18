@@ -42,6 +42,25 @@ const KELOMPOK = [
         label: "Persetujuan",
         Ikon: ClipboardCheck,
         badge: "persetujuan" as const,
+        param: "status" as const,
+        anak: [
+          {
+            href: "/admin/persetujuan?status=PENDING",
+            label: "Menunggu",
+            tab: "PENDING",
+          },
+          {
+            href: "/admin/persetujuan?status=APPROVED",
+            label: "Disetujui",
+            tab: "APPROVED",
+          },
+          {
+            href: "/admin/persetujuan?status=REJECTED",
+            label: "Ditolak",
+            tab: "REJECTED",
+          },
+          { href: "/admin/persetujuan?status=SEMUA", label: "Semua", tab: "SEMUA" },
+        ],
       },
       {
         href: "/admin/tindakan",
@@ -78,6 +97,21 @@ const KELOMPOK = [
         Ikon: Users,
         badge: "pendaftaran" as const,
         hanyaAdmin: true,
+        param: "status" as const,
+        anak: [
+          { href: "/admin/karyawan?status=SEMUA", label: "Semua", tab: "SEMUA" },
+          { href: "/admin/karyawan?status=ACTIVE", label: "Aktif", tab: "ACTIVE" },
+          {
+            href: "/admin/karyawan?status=PENDING_APPROVAL",
+            label: "Menunggu Verifikasi",
+            tab: "PENDING_APPROVAL",
+          },
+          {
+            href: "/admin/karyawan?status=SUSPENDED",
+            label: "Nonaktif",
+            tab: "SUSPENDED",
+          },
+        ],
       },
       {
         href: "/admin/organisasi",
@@ -108,6 +142,21 @@ const KELOMPOK = [
         label: "Pengaturan",
         Ikon: Settings,
         hanyaAdmin: true,
+        anak: [
+          { href: "/admin/pengaturan?tab=umum", label: "Umum", tab: "umum" },
+          { href: "/admin/pengaturan?tab=cuti", label: "Cuti", tab: "cuti" },
+          {
+            href: "/admin/pengaturan?tab=persetujuan",
+            label: "Aturan Persetujuan",
+            tab: "persetujuan",
+          },
+          { href: "/admin/pengaturan?tab=libur", label: "Hari Libur", tab: "libur" },
+          {
+            href: "/admin/pengaturan?tab=tutup-tahun",
+            label: "Tutup Tahun",
+            tab: "tutup-tahun",
+          },
+        ],
       },
       { href: "/admin/audit", label: "Audit Log", Ikon: ScrollText, hanyaAdmin: true },
     ],
@@ -126,7 +175,7 @@ export function SidebarAdmin({
   const [terbuka, setTerbuka] = useState(false);
   const [dibuka, setDibuka] = useState<string[]>([]);
 
-  const tabAktif = params.get("tab");
+  const nilaiParam = (nama: string) => params.get(nama);
 
   // Kelompok yang sedang dibuka isinya ikut terbuka sendiri, supaya pengguna
   // tidak perlu mencari di mana halaman yang sedang ia lihat berada.
@@ -169,6 +218,7 @@ export function SidebarAdmin({
                 const aktif = exact ? pathname === href : pathname.startsWith(href);
                 const jumlah = "badge" in sisa && sisa.badge ? badge[sisa.badge] : 0;
                 const anak = "anak" in sisa ? sisa.anak : undefined;
+                const namaParam = ("param" in sisa && sisa.param) || "tab";
 
                 const kelas = cn(
                   "flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13.5px] font-semibold transition-colors",
@@ -198,7 +248,8 @@ export function SidebarAdmin({
                       {buka && (
                         <ul className="border-app mt-0.5 ml-[1.4rem] space-y-0.5 border-l pl-3">
                           {anak.map((a) => {
-                            const aAktif = aktif && (tabAktif ?? anak[0].tab) === a.tab;
+                            const aAktif =
+                              aktif && (nilaiParam(namaParam) ?? anak[0].tab) === a.tab;
                             return (
                               <li key={a.href}>
                                 <Link
