@@ -24,7 +24,8 @@ export function PetaLeaflet({
   akurasiM,
   diLuarArea,
 }: {
-  posisi: { lat: number; lng: number };
+  /** Null selagi GPS belum terbaca — areanya tetap digambar. */
+  posisi: { lat: number; lng: number } | null;
   pusat: { lat: number; lng: number };
   radiusM: number;
   akurasiM: number;
@@ -93,31 +94,33 @@ export function PetaLeaflet({
     }).addTo(lapisan);
 
     // Ketelitian pembacaan, lalu posisi karyawan di atasnya
-    L.circle([posisi.lat, posisi.lng], {
-      radius: Math.max(akurasiM, 1),
-      color: "#0ea5e9",
-      weight: 1,
-      fillColor: "#0ea5e9",
-      fillOpacity: 0.12,
-    }).addTo(lapisan);
+    if (posisi) {
+      L.circle([posisi.lat, posisi.lng], {
+        radius: Math.max(akurasiM, 1),
+        color: "#0ea5e9",
+        weight: 1,
+        fillColor: "#0ea5e9",
+        fillOpacity: 0.12,
+      }).addTo(lapisan);
 
-    L.circleMarker([posisi.lat, posisi.lng], {
-      radius: 7,
-      color: "#ffffff",
-      weight: 3,
-      fillColor: "#0ea5e9",
-      fillOpacity: 1,
-    }).addTo(lapisan);
+      L.circleMarker([posisi.lat, posisi.lng], {
+        radius: 7,
+        color: "#ffffff",
+        weight: 3,
+        fillColor: "#0ea5e9",
+        fillOpacity: 1,
+      }).addTo(lapisan);
+    }
 
     // Bingkai harus memuat seluruh lingkaran batas, bukan hanya kedua titik.
     // Tanpa ini, area seluas ratusan meter jatuh di luar layar ketika orangnya
     // kebetulan berdiri dekat pusat — dan justru batas itulah yang ingin
     // dilihat sebelum menekan tombol absen.
     const batas = L.latLng(pusat.lat, pusat.lng).toBounds(radiusM * 2);
-    batas.extend([posisi.lat, posisi.lng]);
+    if (posisi) batas.extend([posisi.lat, posisi.lng]);
 
     peta.fitBounds(batas.pad(0.08), { maxZoom: 18, animate: false });
-  }, [posisi.lat, posisi.lng, pusat.lat, pusat.lng, radiusM, akurasiM, diLuarArea]);
+  }, [posisi, pusat.lat, pusat.lng, radiusM, akurasiM, diLuarArea]);
 
   return <div ref={wadahRef} className="h-52 w-full" aria-label="Peta area absen" />;
 }

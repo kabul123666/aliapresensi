@@ -331,13 +331,13 @@ export function PanelAbsen({
           {tahap !== "selesai" && (
             <>
               {/* --------------------------------------------- Gambaran area */}
-              {posisi && lokasi && jarak !== null && (
+              {lokasi && (
                 <PetaArea
-                  posisi={{ lat: posisi.lat, lng: posisi.lng }}
+                  posisi={posisi ? { lat: posisi.lat, lng: posisi.lng } : null}
                   pusat={{ lat: lokasi.lat, lng: lokasi.lng }}
                   jarakM={jarak}
                   radiusM={lokasi.radiusM}
-                  akurasiM={posisi.akurasi}
+                  akurasiM={posisi?.akurasi ?? null}
                   namaLokasi={lokasi.nama}
                   diLuarArea={diLuarArea}
                 />

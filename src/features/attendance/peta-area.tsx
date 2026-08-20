@@ -33,11 +33,11 @@ export function PetaArea({
   namaLokasi,
   diLuarArea,
 }: {
-  posisi: { lat: number; lng: number };
+  posisi: { lat: number; lng: number } | null;
   pusat: { lat: number; lng: number };
-  jarakM: number;
+  jarakM: number | null;
   radiusM: number;
-  akurasiM: number;
+  akurasiM: number | null;
   namaLokasi: string;
   diLuarArea: boolean;
 }) {
@@ -47,13 +47,17 @@ export function PetaArea({
         posisi={posisi}
         pusat={pusat}
         radiusM={radiusM}
-        akurasiM={akurasiM}
+        akurasiM={akurasiM ?? 0}
         diLuarArea={diLuarArea}
       />
 
       <div className="border-app border-t px-4 py-3">
         <p className="text-body text-sm font-bold">
-          {diLuarArea ? "Di luar area absen" : "Berada di dalam area absen"}
+          {!posisi
+            ? "Menunggu lokasi terbaca"
+            : diLuarArea
+              ? "Di luar area absen"
+              : "Berada di dalam area absen"}
         </p>
         <p className="text-muted mt-0.5 text-[13px]">
           {namaLokasi} · radius {radiusM} m
@@ -61,9 +65,12 @@ export function PetaArea({
 
         <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
           {[
-            { k: "Jarak", v: `${jarakM} m` },
+            { k: "Jarak", v: jarakM === null ? "—" : `${jarakM} m` },
             { k: "Batas", v: `${radiusM} m` },
-            { k: "Ketelitian", v: `±${Math.round(akurasiM)} m` },
+            {
+              k: "Ketelitian",
+              v: akurasiM === null ? "—" : `±${Math.round(akurasiM)} m`,
+            },
           ].map((b) => (
             <div key={b.k} className="bg-surface-muted rounded-lg py-2">
               <dt className="text-subtle text-[10px] font-semibold">{b.k}</dt>
@@ -72,7 +79,14 @@ export function PetaArea({
           ))}
         </dl>
 
-        {diLuarArea && (
+        {!posisi && (
+          <p className="text-muted mt-2.5 text-xs leading-relaxed">
+            Lingkaran di atas adalah area tempat Anda boleh absen. Titik posisi Anda
+            muncul begitu izin lokasi diberikan dan GPS terbaca.
+          </p>
+        )}
+
+        {posisi && diLuarArea && jarakM !== null && (
           <p className="text-muted mt-2.5 text-xs leading-relaxed">
             Mendekat sekitar {Math.max(1, jarakM - radiusM)} m lagi ke {namaLokasi}. Bila
             Anda merasa sudah berada di tempat, tunggu sebentar — titik biru masih menajam
