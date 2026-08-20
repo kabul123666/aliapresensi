@@ -2,9 +2,17 @@ import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 
 import { IconApproval, IconCuti, IconLembur, IconRiwayat } from "@/components/icons3d";
+import { FileText } from "lucide-react";
+
 import { BadgePengajuan } from "@/components/ui/status";
 import { getDb } from "@/db/client";
-import { leaveBalances, leaveTypes, requests, type RequestType } from "@/db/schema";
+import {
+  leaveBalances,
+  leaveTypes,
+  requestApprovals,
+  requests,
+  type RequestType,
+} from "@/db/schema";
 import { TombolBatal } from "@/features/requests/tombol-batal";
 import { wajibMasuk } from "@/lib/auth/session";
 import { tanggalPendek, tanggalWIB } from "@/lib/waktu";
@@ -25,7 +33,7 @@ export default async function HalamanPengajuan() {
   const db = await getDb();
   const tahun = Number(tanggalWIB().slice(0, 4));
 
-  const [daftar, saldo] = await Promise.all([
+  const [daftar, saldo, keputusan] = await Promise.all([
     db
       .select()
       .from(requests)
@@ -43,7 +51,25 @@ export default async function HalamanPengajuan() {
       .from(leaveBalances)
       .innerJoin(leaveTypes, eq(leaveTypes.id, leaveBalances.leaveTypeId))
       .where(eq(leaveBalances.employeeId, pengguna.employeeId)),
+
+    // Catatan penyetuju tinggal di tabel tersendiri. Tanpa ini karyawan hanya
+    // melihat pengajuannya ditolak tanpa pernah tahu alasannya.
+    db
+      .select({
+        requestId: requestApprovals.requestId,
+        catatan: requestApprovals.catatan,
+        keputusan: requestApprovals.keputusan,
+      })
+      .from(requestApprovals)
+      .innerJoin(requests, eq(requests.id, requestApprovals.requestId))
+      .where(eq(requests.employeeId, pengguna.employeeId)),
   ]);
+
+  const petaCatatan = new Map(
+    keputusan
+      .filter((k) => k.catatan && k.keputusan !== "PENDING")
+      .map((k) => [k.requestId, k.catatan] as const),
+  );
 
   const cutiTahunan = saldo.find((s) => s.nama === "Cuti Tahunan");
   const sisaCuti = cutiTahunan
@@ -134,27 +160,76 @@ export default async function HalamanPengajuan() {
             </p>
           </div>
         ) : (
-          <ul className="mt-3 space-y-2">
-            {daftar.map((r) => (
-              <li
-                key={r.id}
-                className="bg-surface border-app flex items-center justify-between gap-3 rounded-[var(--radius-card)] border px-4 py-3"
-              >
-                <div className="min-w-0">
-                  <p className="text-body text-sm font-bold">{LABEL_TIPE[r.tipe]}</p>
-                  <p className="text-subtle mt-0.5 truncate text-[12px]">
-                    {tanggalPendek(tanggalWIB(r.createdAt))}
-                    {r.alasan ? ` · ${r.alasan}` : ""}
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
+          <ul className="mt-3 space-y-3">
+            {daftar.map((r) => {
+              // Rincian tiap jenis disimpan di payload, jadi tanggal dan jamnya
+              // dibaca dari sana — bukan dari waktu pengajuan dibuat.
+              const p = (r.payload ?? {}) as Record<string, unknown>;
+              const tgl = typeof p.tanggal === "string" ? p.tanggal : null;
+              const mulai = typeof p.mulai === "string" ? p.mulai : null;
+              const selesai = typeof p.selesai === "string" ? p.selesai : null;
+              const sampai = typeof p.sampai === "string" ? p.sampai : null;
+
+              const waktu = [
+                tgl ? tanggalPendek(tgl) : null,
+                sampai && sampai !== tgl ? `– ${tanggalPendek(sampai)}` : null,
+                mulai && selesai ? `${mulai.slice(0, 5)} – ${selesai.slice(0, 5)}` : null,
+              ]
+                .filter(Boolean)
+                .join(" ");
+
+              return (
+                <li
+                  key={r.id}
+                  className="bg-surface border-app overflow-hidden rounded-[var(--radius-card)] border"
+                >
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <span className="bg-brand-50 dark:bg-brand-900/40 grid size-9 shrink-0 place-items-center rounded-lg">
+                      <FileText
+                        size={17}
+                        className="text-brand-600 dark:text-brand-300"
+                      />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-body text-sm font-bold">{LABEL_TIPE[r.tipe]}</p>
+                      <p className="text-subtle text-[12px]">
+                        Diajukan {tanggalPendek(tanggalWIB(r.createdAt))}
+                      </p>
+                    </div>
+                    <BadgePengajuan status={r.status} />
+                  </div>
+
+                  <dl className="border-app space-y-1.5 border-t px-4 py-3 text-[13px]">
+                    {waktu && (
+                      <div className="flex gap-2">
+                        <dt className="text-muted w-24 shrink-0">Tanggal/Waktu</dt>
+                        <dd className="text-body flex-1 font-semibold">{waktu}</dd>
+                      </div>
+                    )}
+                    {r.alasan && (
+                      <div className="flex gap-2">
+                        <dt className="text-muted w-24 shrink-0">Alasan</dt>
+                        <dd className="text-body flex-1 font-semibold">{r.alasan}</dd>
+                      </div>
+                    )}
+                    {petaCatatan.get(r.id) && (
+                      <div className="flex gap-2">
+                        <dt className="text-muted w-24 shrink-0">Catatan</dt>
+                        <dd className="text-body flex-1 font-semibold">
+                          {petaCatatan.get(r.id)}
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+
                   {r.status === "PENDING" && (
-                    <TombolBatal id={r.id} label={LABEL_TIPE[r.tipe]} />
+                    <div className="border-app border-t px-4 py-2.5">
+                      <TombolBatal id={r.id} label={LABEL_TIPE[r.tipe]} />
+                    </div>
                   )}
-                  <BadgePengajuan status={r.status} />
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

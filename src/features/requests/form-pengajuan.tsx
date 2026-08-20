@@ -95,15 +95,37 @@ export function FormPengajuan({
 
   const info = JUDUL[jenis];
 
+  // Cuti dan izin bergantung pada jenis yang dibuat admin. Tanpa itu, dahulu
+  // yang tampil hanya daftar pilihan kosong tanpa keterangan — orang mengira
+  // aplikasinya rusak, padahal yang kurang adalah data yang memang harus
+  // ditetapkan HRD lebih dulu.
+  const butuhJenis = jenis === "cuti" || jenis === "izin";
+  if (butuhJenis && jenisCuti.length === 0) {
+    return (
+      <div className="px-5 pb-8">
+        <div className="border-app bg-surface rounded-[var(--radius-card)] border border-dashed px-5 py-10 text-center">
+          <p className="text-body text-sm font-bold">
+            Jenis {jenis === "izin" ? "izin" : "cuti"} belum diatur
+          </p>
+          <p className="text-muted mx-auto mt-2 max-w-[19rem] text-[13px] leading-relaxed">
+            HRD perlu menetapkan jenis beserta kuotanya lebih dulu di Pengaturan → Cuti.
+            Setelah itu pengajuan bisa dibuat dari sini.
+          </p>
+          <Link
+            href="/pengajuan"
+            className="border-app-strong bg-surface text-body hover:bg-surface-muted mt-6 inline-flex h-11 items-center rounded-[var(--radius-input)] border px-5 text-sm font-semibold transition-colors"
+          >
+            Kembali
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="px-5 pb-8">
       <form action={kirim} className="space-y-4">
-        <div>
-          <h1 className="text-body text-xl font-extrabold tracking-tight">
-            {info.judul}
-          </h1>
-          <p className="text-muted mt-1 text-sm">{info.isi}</p>
-        </div>
+        <p className="text-muted text-[13px] leading-relaxed">{info.isi}</p>
 
         {hasil && !hasil.ok && (
           <div
@@ -295,15 +317,14 @@ export function FormPengajuan({
           />
         </div>
 
-        <Button
+        <button
           type="submit"
-          size="lg"
-          className="w-full"
           disabled={sedang || Boolean(kurang)}
+          className="bg-brand-600 hover:bg-brand-700 active:bg-brand-800 mt-2 inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-full text-[15px] font-bold text-white transition-colors disabled:opacity-50"
         >
           {sedang && <Loader2 size={17} className="animate-spin" />}
-          Kirim pengajuan
-        </Button>
+          Ajukan Sekarang
+        </button>
 
         <Link
           href="/pengajuan"

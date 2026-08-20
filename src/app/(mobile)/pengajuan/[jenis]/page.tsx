@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { and, eq } from "drizzle-orm";
 
 import { getDb } from "@/db/client";
@@ -10,6 +12,13 @@ import { tanggalWIB } from "@/lib/waktu";
 
 const JENIS = ["cuti", "izin", "lembur", "koreksi"] as const;
 type Jenis = (typeof JENIS)[number];
+
+const JUDUL_HALAMAN: Record<Jenis, string> = {
+  cuti: "Formulir Cuti",
+  izin: "Formulir Izin",
+  lembur: "Formulir Lembur",
+  koreksi: "Formulir Presensi Backdate",
+};
 
 export default async function HalamanFormPengajuan({
   params,
@@ -71,11 +80,19 @@ export default async function HalamanFormPengajuan({
 
   return (
     <div className="pb-6">
-      <header className="bg-surface border-app pt-safe border-b px-5 pb-8">
-        <h1 className="text-body pt-4 text-[19px] font-extrabold">Pengajuan Baru</h1>
-        <p className="text-subtle mt-0.5 text-xs">
-          Akan diteruskan ke penyetuju yang ditunjuk admin
-        </p>
+      <header className="bg-brand-700 pt-safe px-5 pb-5">
+        <div className="flex items-center gap-3 pt-4">
+          <Link
+            href="/pengajuan"
+            className="grid size-9 place-items-center rounded-full text-white transition-colors hover:bg-white/10"
+            aria-label="Kembali ke daftar pengajuan"
+          >
+            <ArrowLeft size={20} />
+          </Link>
+          <h1 className="text-[18px] font-extrabold text-white">
+            {JUDUL_HALAMAN[jenis as Jenis]}
+          </h1>
+        </div>
       </header>
 
       <div className="pt-5">
