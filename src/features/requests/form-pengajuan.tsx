@@ -25,6 +25,18 @@ export type JenisCutiOpsi = {
 
 type Jenis = "cuti" | "izin" | "lembur" | "koreksi";
 
+/**
+ * Formulir pengajuan memakai isian bergaris bawah, bukan kotak berbingkai.
+ *
+ * Satu layar di sini berisi lima sampai enam isian berturut-turut; kotak
+ * penuh membuat layarnya penuh garis dan berat dibaca, sedangkan garis bawah
+ * menyisakan satu garis per isian dan menjaga labelnya tetap menonjol.
+ * Gayanya ditaruh di berkas ini saja supaya formulir admin — yang padat dan
+ * memang lebih terbantu oleh kotak — tidak ikut berubah.
+ */
+const ISIAN =
+  "rounded-none border-0 border-b bg-transparent px-0 focus:border-brand-600 focus:ring-0";
+
 const JUDUL: Record<Jenis, { judul: string; isi: string }> = {
   cuti: {
     judul: "Ajukan Cuti",
@@ -140,8 +152,11 @@ export function FormPengajuan({
         {(jenis === "cuti" || jenis === "izin") && (
           <>
             <div>
-              <Label htmlFor="leaveTypeId">Jenis</Label>
+              <Label className="text-muted text-[13px] font-medium" htmlFor="leaveTypeId">
+                Jenis
+              </Label>
               <Select
+                className={ISIAN}
                 id="leaveTypeId"
                 name="leaveTypeId"
                 value={jenisTerpilih}
@@ -159,8 +174,11 @@ export function FormPengajuan({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="mulai">Mulai</Label>
+                <Label className="text-muted text-[13px] font-medium" htmlFor="mulai">
+                  Mulai
+                </Label>
                 <Input
+                  className={ISIAN}
                   id="mulai"
                   name="mulai"
                   type="date"
@@ -173,8 +191,11 @@ export function FormPengajuan({
                 />
               </div>
               <div>
-                <Label htmlFor="akhir">Selesai</Label>
+                <Label className="text-muted text-[13px] font-medium" htmlFor="akhir">
+                  Selesai
+                </Label>
                 <Input
+                  className={ISIAN}
                   id="akhir"
                   name="akhir"
                   type="date"
@@ -205,7 +226,7 @@ export function FormPengajuan({
 
             {cutiAktif?.butuhLampiran && (
               <div>
-                <Label htmlFor="lampiran">
+                <Label className="text-muted text-[13px] font-medium" htmlFor="lampiran">
                   <span className="inline-flex items-center gap-1.5">
                     <Paperclip size={14} /> Lampiran surat dokter
                   </span>
@@ -228,8 +249,11 @@ export function FormPengajuan({
         {jenis === "lembur" && (
           <>
             <div>
-              <Label htmlFor="tanggal">Tanggal lembur</Label>
+              <Label className="text-muted text-[13px] font-medium" htmlFor="tanggal">
+                Tanggal lembur
+              </Label>
               <Input
+                className={ISIAN}
                 id="tanggal"
                 name="tanggal"
                 type="date"
@@ -240,8 +264,11 @@ export function FormPengajuan({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="jamMulai">Jam mulai</Label>
+                <Label className="text-muted text-[13px] font-medium" htmlFor="jamMulai">
+                  Jam mulai
+                </Label>
                 <Input
+                  className={ISIAN}
                   id="jamMulai"
                   name="jamMulai"
                   type="time"
@@ -250,8 +277,14 @@ export function FormPengajuan({
                 />
               </div>
               <div>
-                <Label htmlFor="jamSelesai">Jam selesai</Label>
+                <Label
+                  className="text-muted text-[13px] font-medium"
+                  htmlFor="jamSelesai"
+                >
+                  Jam selesai
+                </Label>
                 <Input
+                  className={ISIAN}
                   id="jamSelesai"
                   name="jamSelesai"
                   type="time"
@@ -267,8 +300,11 @@ export function FormPengajuan({
         {jenis === "koreksi" && (
           <>
             <div>
-              <Label htmlFor="tanggal">Tanggal yang dikoreksi</Label>
+              <Label className="text-muted text-[13px] font-medium" htmlFor="tanggal">
+                Tanggal yang dikoreksi
+              </Label>
               <Input
+                className={ISIAN}
                 id="tanggal"
                 name="tanggal"
                 type="date"
@@ -280,8 +316,11 @@ export function FormPengajuan({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="jamMasuk">Jam masuk sebenarnya</Label>
+                <Label className="text-muted text-[13px] font-medium" htmlFor="jamMasuk">
+                  Jam masuk sebenarnya
+                </Label>
                 <Input
+                  className={ISIAN}
                   id="jamMasuk"
                   name="jamMasuk"
                   type="time"
@@ -290,8 +329,11 @@ export function FormPengajuan({
                 />
               </div>
               <div>
-                <Label htmlFor="jamPulang">Jam pulang sebenarnya</Label>
+                <Label className="text-muted text-[13px] font-medium" htmlFor="jamPulang">
+                  Jam pulang sebenarnya
+                </Label>
                 <Input
+                  className={ISIAN}
                   id="jamPulang"
                   name="jamPulang"
                   type="time"
@@ -304,8 +346,11 @@ export function FormPengajuan({
         )}
 
         <div>
-          <Label htmlFor="alasan">Alasan</Label>
+          <Label className="text-muted text-[13px] font-medium" htmlFor="alasan">
+            Alasan
+          </Label>
           <Textarea
+            className={ISIAN}
             id="alasan"
             name="alasan"
             placeholder={

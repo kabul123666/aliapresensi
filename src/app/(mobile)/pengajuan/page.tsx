@@ -80,9 +80,9 @@ export default async function HalamanPengajuan() {
     : 0;
 
   const jenisAjuan = [
-    { href: "/pengajuan/cuti", label: "Ajukan Cuti", Ikon: IconCuti },
-    { href: "/pengajuan/lembur", label: "Ajukan Lembur", Ikon: IconLembur },
-    { href: "/pengajuan/koreksi", label: "Koreksi Absen", Ikon: IconRiwayat },
+    { href: "/pengajuan/cuti", label: "Cuti", Ikon: IconCuti },
+    { href: "/pengajuan/lembur", label: "Lembur", Ikon: IconLembur },
+    { href: "/pengajuan/koreksi", label: "Presensi Backdate", Ikon: IconRiwayat },
     { href: "/pengajuan/izin", label: "Izin / Sakit", Ikon: IconApproval },
   ];
 
@@ -128,7 +128,7 @@ export default async function HalamanPengajuan() {
       {/* Jenis pengajuan */}
       <section className="mt-6 px-5">
         <h2 className="text-body text-sm font-extrabold tracking-tight">
-          Buat pengajuan
+          Jenis pengajuan
         </h2>
         <div className="mt-3 grid grid-cols-2 gap-2.5">
           {jenisAjuan.map(({ href, label, Ikon }) => (
