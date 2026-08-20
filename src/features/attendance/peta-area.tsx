@@ -1,6 +1,15 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+const PetaLeaflet = dynamic(() => import("./peta-leaflet").then((m) => m.PetaLeaflet), {
+  ssr: false,
+  loading: () => (
+    <div className="bg-surface-muted text-subtle grid h-52 place-items-center text-xs">
+      Memuat peta…
+    </div>
+  ),
+});
 
 /**
  * Gambaran posisi terhadap area absen.
@@ -16,67 +25,31 @@ import { cn } from "@/lib/utils";
  * dilakukan adalah menunggu sebentar, bukan berpindah tempat.
  */
 export function PetaArea({
+  posisi,
+  pusat,
   jarakM,
   radiusM,
   akurasiM,
   namaLokasi,
   diLuarArea,
 }: {
+  posisi: { lat: number; lng: number };
+  pusat: { lat: number; lng: number };
   jarakM: number;
   radiusM: number;
   akurasiM: number;
   namaLokasi: string;
   diLuarArea: boolean;
 }) {
-  // Bidang gambar dibuat cukup lebar untuk memuat area, posisi, dan cincin
-  // ketelitian sekaligus, sehingga tidak ada yang terpotong di tepi.
-  const jangkauan = Math.max(radiusM * 1.6, jarakM * 1.25, akurasiM * 1.1, 30);
-  const skala = 46 / jangkauan; // 46 dari 60 satuan viewBox, sisanya margin
-
-  const rArea = radiusM * skala;
-  const rAkurasi = Math.min(akurasiM * skala, 58);
-  const dTitik = Math.min(jarakM * skala, 56);
-
   return (
     <div className="border-app bg-surface overflow-hidden rounded-[var(--radius-card)] border">
-      <div className="bg-surface-muted relative grid place-items-center py-4">
-        <svg
-          viewBox="-60 -60 120 120"
-          className="h-40 w-40"
-          role="img"
-          aria-label={
-            diLuarArea
-              ? `Di luar area ${namaLokasi}, ${jarakM} meter dari titik pusat`
-              : `Berada di dalam area ${namaLokasi}`
-          }
-        >
-          {/* Area yang diizinkan */}
-          <circle
-            r={rArea}
-            className={cn(diLuarArea ? "fill-danger-500/10" : "fill-brand-500/15")}
-          />
-          <circle
-            r={rArea}
-            fill="none"
-            strokeDasharray="3 3"
-            strokeWidth="1.5"
-            className={diLuarArea ? "stroke-danger-500/60" : "stroke-brand-500"}
-          />
-
-          {/* Titik kantor */}
-          <circle r="3" className="fill-brand-700" />
-
-          {/* Cincin ketelitian dan posisi karyawan */}
-          <g transform={`translate(0 ${-dTitik})`}>
-            <circle
-              r={rAkurasi}
-              className="fill-sky-500/15 stroke-sky-500/40"
-              strokeWidth="1"
-            />
-            <circle r="4.5" className="fill-sky-500 stroke-white" strokeWidth="2" />
-          </g>
-        </svg>
-      </div>
+      <PetaLeaflet
+        posisi={posisi}
+        pusat={pusat}
+        radiusM={radiusM}
+        akurasiM={akurasiM}
+        diLuarArea={diLuarArea}
+      />
 
       <div className="border-app border-t px-4 py-3">
         <p className="text-body text-sm font-bold">

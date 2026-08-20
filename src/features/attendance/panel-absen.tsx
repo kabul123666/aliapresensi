@@ -333,6 +333,8 @@ export function PanelAbsen({
               {/* --------------------------------------------- Gambaran area */}
               {posisi && lokasi && jarak !== null && (
                 <PetaArea
+                  posisi={{ lat: posisi.lat, lng: posisi.lng }}
+                  pusat={{ lat: lokasi.lat, lng: lokasi.lng }}
                   jarakM={jarak}
                   radiusM={lokasi.radiusM}
                   akurasiM={posisi.akurasi}
