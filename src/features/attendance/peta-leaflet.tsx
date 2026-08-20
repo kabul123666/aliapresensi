@@ -109,13 +109,14 @@ export function PetaLeaflet({
       fillOpacity: 1,
     }).addTo(lapisan);
 
-    // Bingkai disetel agar area dan posisi selalu terlihat sekaligus.
-    const batas = L.latLngBounds([
-      [pusat.lat, pusat.lng],
-      [posisi.lat, posisi.lng],
-    ]).pad(0.6);
+    // Bingkai harus memuat seluruh lingkaran batas, bukan hanya kedua titik.
+    // Tanpa ini, area seluas ratusan meter jatuh di luar layar ketika orangnya
+    // kebetulan berdiri dekat pusat — dan justru batas itulah yang ingin
+    // dilihat sebelum menekan tombol absen.
+    const batas = L.latLng(pusat.lat, pusat.lng).toBounds(radiusM * 2);
+    batas.extend([posisi.lat, posisi.lng]);
 
-    peta.fitBounds(batas, { maxZoom: 18, animate: false });
+    peta.fitBounds(batas.pad(0.08), { maxZoom: 18, animate: false });
   }, [posisi.lat, posisi.lng, pusat.lat, pusat.lng, radiusM, akurasiM, diLuarArea]);
 
   return <div ref={wadahRef} className="h-52 w-full" aria-label="Peta area absen" />;

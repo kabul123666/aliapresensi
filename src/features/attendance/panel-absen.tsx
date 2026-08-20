@@ -395,18 +395,6 @@ export function PanelAbsen({
                     )}
                   </div>
                 </div>
-
-                {posisi && (
-                  <div className="border-app mt-3 aspect-[16/9] overflow-hidden rounded-xl border">
-                    <iframe
-                      title="Peta lokasi absensi"
-                      className="h-full w-full"
-                      loading="lazy"
-                      referrerPolicy="no-referrer"
-                      src={`https://www.openstreetmap.org/export/embed.html?bbox=${posisi.lng - 0.004}%2C${posisi.lat - 0.002}%2C${posisi.lng + 0.004}%2C${posisi.lat + 0.002}&layer=mapnik&marker=${posisi.lat}%2C${posisi.lng}`}
-                    />
-                  </div>
-                )}
               </div>
 
               {/* -------------------------------------------------- Kamera */}
