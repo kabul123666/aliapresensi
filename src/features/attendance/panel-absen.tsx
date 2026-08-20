@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Label, Select, Textarea } from "@/components/ui/field";
 import { formatRupiah } from "@/lib/utils";
 import { aksiClockIn, aksiClockOut, type HasilAbsen } from "./actions";
+import { PetaArea } from "./peta-area";
 
 export type Tindakan = { id: string; nama: string; kategori: string; fee: number };
 
@@ -101,6 +102,7 @@ export function PanelAbsen({
     jarak !== null && lokasi ? jarak - (posisi?.akurasi ?? 0) > lokasi.radiusM : false;
 
   /* ------------------------------------------------------------- Lokasi */
+  const [pantauan, setPantauan] = useState(0);
   const [didukung] = useState(
     () => typeof navigator !== "undefined" && "geolocation" in navigator,
   );
@@ -124,16 +126,34 @@ export function PanelAbsen({
 
   const ambilLokasi = useCallback(() => {
     if (!didukung) return;
-    navigator.geolocation.getCurrentPosition(terimaPosisi, tolakPosisi, {
+    setPosisi(null);
+    setGalatLokasi(null);
+    setPantauan((n) => n + 1);
+  }, [didukung]);
+
+  /**
+   * Lokasi dipantau terus, bukan dibaca sekali.
+   *
+   * Pembacaan pertama sebuah ponsel hampir selalu berasal dari jaringan —
+   * menara seluler atau titik Wi-Fi — dengan ketelitian ratusan meter, dan GPS
+   * baru mengunci beberapa detik kemudian. Membaca sekali membuat aplikasi
+   * terjebak pada tebakan kasar itu: orang yang benar-benar berdiri di depan
+   * klinik tetap dianggap di luar area, dan menekan coba lagi pun sering
+   * mengembalikan angka yang sama.
+   *
+   * Dengan watchPosition, setiap perbaikan dari perangkat langsung dipakai,
+   * sehingga titiknya menajam sendiri sambil orangnya menunggu.
+   */
+  useEffect(() => {
+    if (!didukung) return;
+
+    const id = navigator.geolocation.watchPosition(terimaPosisi, tolakPosisi, {
       enableHighAccuracy: true,
-      timeout: 15_000,
+      timeout: 20_000,
       maximumAge: 0,
     });
-  }, [didukung, terimaPosisi, tolakPosisi]);
-
-  // Effect hanya memulai pembacaan GPS (sistem di luar React); perubahan
-  // state terjadi di dalam callback-nya, bukan secara sinkron di sini.
-  useEffect(ambilLokasi, [ambilLokasi]);
+    return () => navigator.geolocation.clearWatch(id);
+  }, [didukung, terimaPosisi, tolakPosisi, pantauan]);
 
   const pesanLokasi = didukung
     ? galatLokasi
@@ -310,6 +330,17 @@ export function PanelAbsen({
 
           {tahap !== "selesai" && (
             <>
+              {/* --------------------------------------------- Gambaran area */}
+              {posisi && lokasi && jarak !== null && (
+                <PetaArea
+                  jarakM={jarak}
+                  radiusM={lokasi.radiusM}
+                  akurasiM={posisi.akurasi}
+                  namaLokasi={lokasi.nama}
+                  diLuarArea={diLuarArea}
+                />
+              )}
+
               {/* -------------------------------------------------- Lokasi */}
               <div className="border-app bg-surface-muted rounded-[var(--radius-card)] border p-4">
                 <div className="flex items-start gap-3">
@@ -352,6 +383,12 @@ export function PanelAbsen({
                             : "Lokasi kerja belum diatur"}
                           {" · "}akurasi ±{Math.round(posisi.akurasi)} m
                         </p>
+                        <button
+                          onClick={ambilLokasi}
+                          className="text-brand-700 dark:text-brand-300 mt-2 inline-flex items-center gap-1.5 text-[13px] font-semibold hover:underline"
+                        >
+                          <RefreshCcw size={13} /> Perbarui lokasi
+                        </button>
                       </>
                     )}
                   </div>
