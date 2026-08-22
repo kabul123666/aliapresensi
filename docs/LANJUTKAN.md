@@ -62,13 +62,14 @@ Manager ke departemennya · penugasan lintas cabang · penggantian password oleh
 admin · beranda bergaya aplikasi kepegawaian · menu pilihan yang bisa diatur
 karyawan · bilah bawah bertombol tengah · profil berfoto dengan stiker · halaman
 pengaturan akun · peta area absen dengan pemantauan GPS berkelanjutan · daftar
-dan formulir pengajuan per jenis.
+dan formulir pengajuan per jenis · halaman riwayat kehadiran bergaya aplikasi
+kepegawaian.
 
 ## Belum dikerjakan
 
-- **Tampilan halaman lain belum dirombak**: Riwayat, Fee Saya, Jadwal, dan
-  seluruh panel admin masih tampilan lama. Pemilik meminta semuanya mengikuti
-  pola aplikasi kepegawaian seperti Talenta/Epployee.
+- **Tampilan halaman lain belum dirombak**: Fee Saya, Jadwal, dan seluruh
+  panel admin masih tampilan lama. Pemilik meminta semuanya mengikuti pola
+  aplikasi kepegawaian seperti Talenta/Epployee.
 - **Menu bertanda "Segera"** — fiturnya belum ada sama sekali: Dinas, WFH,
   Aktivitas Harian, Claim, Bonus, Slip Gaji, Perjalanan Dinas, Performance,
   dan Tugas di bilah bawah.
